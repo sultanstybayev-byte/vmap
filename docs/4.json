@@ -1,0 +1,38 @@
+{
+ "v": 2,
+ "kind": "pismo",
+ "title": "Письмо: Дарвин М. Роудс",
+ "note": "",
+ "data": {
+  "sigHand": "",
+  "size": 1,
+  "title": "Указ",
+  "sub": "",
+  "initial": "",
+  "wobble": false,
+  "backdrop": true,
+  "seed": 4634,
+  "kind": "note",
+  "paper": "old",
+  "ink": "sepia",
+  "hand": "aquiline",
+  "place": "",
+  "greet": "Священная богиня,",
+  "body": "Прошу вас о благословении этому погибающего и нзнывающего мира! ",
+  "close": "Со всей любви, ",
+  "sign": "Дарвин М. Роудс",
+  "ps": "",
+  "seal": "g-shield:2",
+  "wax": "wine",
+  "dropcap": false,
+  "corners": false,
+  "folds": true,
+  "blots": true,
+  "design": 0,
+  "sealScale": 40,
+  "sealPos": [
+   0.2244,
+   0.7123
+  ]
+ }
+}
