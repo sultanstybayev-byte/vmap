@@ -888,6 +888,7 @@ async function heroUpdate(mutate, message) {
   throw new Error("Книга менялась одновременно с вами. Попробуйте ещё раз.");
 }
 const HERO_LEVELS = ["начальный", "средний", "высокий"];
+const heroSex = v => { const x = String(v || "").trim().toLowerCase(); return !x ? "" : /^м/.test(x) ? "Мужчина" : /^ж/.test(x) ? "Женщина" : String(v).trim(); };
 function heroImgFallback(im) {
   const src = im.getAttribute("src") || "";
   if (!im.dataset.raw && !/^(https?:|data:|blob:)/.test(src)) { const c = ghCfg(); im.dataset.raw = "1"; im.src = `https://raw.githubusercontent.com/${c.owner}/${c.repo}/main/${src.replace(/^\.?\//, "")}?t=${Date.now()}`; return; }
@@ -1572,7 +1573,7 @@ function soulDetailHTML(h, L) {
   const B = heroBlocks(h).filter(b => SOUL_TAB === "all" || SOUL_IN[SOUL_TAB].includes(b.t));
   const F = heroFate(h).slice(0, 1); if (F.length && (SOUL_TAB === "all" || SOUL_TAB === "story")) B.unshift({ t: "Карта Судьбы", items: F.map(c => ({ html: `<button type="button" class="sd-fate" data-fate="${c.id}" style="--gc:${fateGroup(c.g)[2]}"><b>${esc(c.n)}</b><span>${esc(fateGroup(c.g)[1])} · открыть описание</span></button>` })) });
   const body = B.map(b => `<h3>${esc(b.t)}</h3>` + b.items.map(it => it.html || `<p${it.cap ? ' class="dropcap"' : ""}>${esc(it.text)}</p>`).join("")).join("") || `<p class="sd-none">Этот раздел пока пуст.</p>`;
-  const facts = [["Возраст", h.age], ["Пол", h.sex]].filter(x => x[1]).map(([a, b]) => `<span>${a}: <b>${esc(b)}</b></span>`).join("");
+  const facts = [["Возраст", h.age], ["Пол", heroSex(h.sex)]].filter(x => x[1]).map(([a, b]) => `<span>${a}: <b>${esc(b)}</b></span>`).join("");
   const nav = L.length > 1 ? `<div class="sd-nav"><button type="button" data-soulgo="-1" aria-label="Предыдущая карта">‹</button><span>${HERO_I + 1} из ${L.length}</span><button type="button" data-soulgo="1" aria-label="Следующая карта">›</button></div>` : "";
   return `<button type="button" class="souls-back" data-shelf>‹ К колоде</button><div class="sd" style="${scVars(h)}"><div class="sd-l"><div class="sc big flipin${curseG(h) ? " cursed" : ""}" style="${scVars(h)};${curseVar(h)}">${curseHTML(h)}${scFace(h)}${scBack()}</div>${nav}</div>
     <div class="sd-r"><div class="sd-in"><div class="sd-head"><p class="sd-name">${esc(h.n || "Без имени")}</p>${h.title ? `<p class="sd-title">${esc(h.title)}</p>` : ""}${facts ? `<div class="sd-facts">${facts}</div>` : ""}${soulFacHTML(h)}</div>
