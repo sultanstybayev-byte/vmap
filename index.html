@@ -902,15 +902,43 @@ const scShade = (hex, k) => { const n = parseInt(String(hex).replace("#", ""), 1
 function scVarsT(t) { const m = cardMetal(t), l = t.leather || "#3b2412"; return `--m:${m};--m1:${scShade(m, .45)};--m2:${scShade(m, -.45)};--m3:${scShade(m, -.7)};--lea:${l};--lea2:${scShade(l, -.55)};--lea1:${scShade(l, .18)}`; }
 const SC_ORN = `<svg class="sc-orn" viewBox="0 0 200 300" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><rect x="12" y="12" width="176" height="276" rx="6"/><rect x="20" y="20" width="160" height="260" rx="4" stroke-width=".8"/><path d="M100 70l40 80-40 80-40-80z"/><path d="M100 96l27 54-27 54-27-54z" stroke-width=".8"/><circle cx="100" cy="150" r="12"/><path d="M100 40v22M100 238v22M44 150H30M170 150h-14"/><path d="M20 52c16 0 32-16 32-32M180 52c-16 0-32-16-32-32M20 248c16 0 32 16 32 32M180 248c-16 0-32 16-32 32"/></g><g fill="currentColor"><circle cx="100" cy="150" r="4"/><path d="M100 30l5 8-5 8-5-8zM100 254l5 8-5 8-5-8z"/></g></svg>`;
 const scBack = () => `<span class="sc-b">${SC_ORN}</span>`;
+const pcStyle = cr => cr && +cr.w ? `left:${+cr.l}%;top:${+cr.t}%;width:${+cr.w}%` : "";
+const NPC_PICS = { silvana: ["silvana-2", "silvana-1"], kayden: ["kayden-1"], valdis: ["valdis-1", "valdis-2"], olivia: ["olivia-1"], redrif: ["redrif-1"],
+  margaret: ["margaret-1"], penelopa: ["penelopa-1"], kain: ["kain-1", "kain-2"], talira: ["talira-1"], callahan: ["lucille-1", "patrick-1", "dwight-1"], mirra: ["mirra-1"] };
+const NPC_CARD_PICS = new Set("valdis-1 olivia-1 silvana-2 kayden-1 redrif-1 margaret-1 penelopa-1 kain-1 talira-1 mirra-1 lucille-1 dwight-1 patrick-1".split(" "));
+const npcFullImg = (key, pics) => { const p = (pics || NPC_PICS[key] || [])[0]; return p ? `npc/${p}.webp` : ""; };
+function npcCardImg(key, o, pics) {
+  if (o && o.img) return { img: o.img, crop: o.crop || null };
+  const p = (pics || NPC_PICS[key] || [])[0]; return { img: p ? `npc/${p}${NPC_CARD_PICS.has(p) ? "-c" : "-t"}.webp` : "" };
+}
+async function npLoad(fresh) {
+  const c = ghCfg(); let data = null;
+  try {
+    if (fresh && c.token) data = (await ghRead(c, "docs/npcpics.json")).data;
+    else { const r = await fetch("docs/npcpics.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
+  } catch (_) {}
+  return data && typeof data === "object" ? data : {};
+}
+async function npUpdate(mutate, message) {
+  const c = ghCfg();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, sha } = await ghRead(c, "docs/npcpics.json");
+    const M = data && typeof data === "object" ? data : {}; mutate(M);
+    try { await ghWrite(c, "docs/npcpics.json", M, sha, message); return M; }
+    catch (e) { if (e.status !== 409 && e.status !== 422) throw e; }
+  }
+  throw new Error("Портреты менялись одновременно с вами. Попробуйте ещё раз.");
+}
 function scFace(h) {
   const n = graveShort(h.n || "Без имени", 18), ini = String(h.n || "?").trim().charAt(0).toUpperCase() || "?";
-  return `<span class="sc-f${n.length > 12 ? " long" : ""}"><span class="sc-pic">${h.img ? `<img src="${fateEsc(h.img)}" alt="" loading="lazy" onerror="heroImgFallback(this)">` : `<span class="sc-ph">${fateEsc(ini)}</span>`}</span><span class="sc-bn"><b>${fateEsc(n)}</b>${h.title ? `<small>${fateEsc(h.title)}</small>` : ""}</span></span>`;
+  return `<span class="sc-f${n.length > 12 ? " long" : ""}"><span class="sc-pic">${h.img ? `<img src="${fateEsc(h.img)}"${h.crop && +h.crop.w ? ` class="cr" style="${pcStyle(h.crop)}"` : ""} alt="" loading="lazy" onerror="heroImgFallback(this)">` : `<span class="sc-ph">${fateEsc(ini)}</span>`}</span><span class="sc-bn"><b>${fateEsc(n)}</b>${h.title ? `<small>${fateEsc(h.title)}</small>` : ""}</span></span>`;
 }
 const SC_CSS = `.sc { --m: #e2bf68; --m1: #f6e2a8; --m2: #7c6430; --m3: #43361a; --lea: #3b2412; --lea2: #1a1008; --lea1: #5a3c24; position: relative; display: block; width: 176px; aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 12px; background: none; cursor: pointer; transform-style: preserve-3d; transition: transform .35s cubic-bezier(.2,.7,.2,1), filter .35s; font: inherit; color: inherit; }
 .sc-f, .sc-b { position: absolute; inset: 0; display: block; border-radius: 12px; padding: 7px; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: linear-gradient(135deg, var(--m1), var(--m2) 28%, var(--m) 50%, var(--m3) 74%, var(--m1)); box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 12px 24px rgba(0,0,0,.6); }
 .sc-f::after { content: ""; position: absolute; inset: 7px; border-radius: 7px; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.6), inset 0 0 0 3px rgba(0,0,0,.18), inset 0 0 22px rgba(0,0,0,.55); }
 .sc-pic { position: absolute; inset: 7px; overflow: hidden; border-radius: 7px; background: radial-gradient(circle at 50% 35%, var(--lea1), var(--lea2)); }
 .sc-pic img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; filter: sepia(.12) contrast(1.05); }
+.sc-pic img.cr { position: absolute; height: auto; max-width: none; object-fit: fill; }
 .sc-ph { display: grid; place-items: center; height: 100%; font: 700 70px Georgia, serif; color: var(--m2); }
 .sc-med { position: absolute; left: -8px; top: -8px; z-index: 2; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, var(--lea1), var(--lea2)); box-shadow: 0 0 0 3px var(--m), 0 0 0 4px var(--m3), 0 4px 8px rgba(0,0,0,.6); font: 700 20px "Cormorant SC", Georgia, serif; color: var(--m1); text-shadow: 0 1px 2px #000; }
 .sc-bn { position: absolute; left: 4px; right: 4px; bottom: 12px; z-index: 2; display: grid; gap: 1px; justify-items: center; padding: 6px 8px 7px; border-radius: 3px; background: linear-gradient(180deg, var(--lea1), var(--lea2)); box-shadow: 0 0 0 2px var(--m), 0 0 0 3px var(--m3), 0 6px 12px rgba(0,0,0,.6); text-align: center; }
@@ -1351,8 +1379,7 @@ function fpHTML(key, cur, total, opts, extra) {
 
 /* Внешность: картинки лежат в папке npc/ (имя.webp — большая, имя-t.webp — маленькая для карточки).
    Первая картинка в списке идёт на карточку. */
-const PICS = { silvana: ["silvana-2", "silvana-1"], kayden: ["kayden-1"], valdis: ["valdis-1", "valdis-2"], olivia: ["olivia-1"], redrif: ["redrif-1"],
-  margaret: ["margaret-1"], penelopa: ["penelopa-1"], kain: ["kain-1", "kain-2"], talira: ["talira-1"], callahan: ["lucille-1", "patrick-1", "dwight-1"] };
+const PICS = NPC_PICS;
 const MEMBER_PICS = { "Люсиль": "lucille-1", "Патрик": "patrick-1", "Дуайт": "dwight-1" };
 /* NPC игроков: принятые анкеты добавляются сюда — по образцу NPC мастера.
    Пример: { key: "imya", name: "Имя", role: "Кто он", age: "30 лет", fac: "Без фракции", pics: ["imya-1"], skills: [], bio: ["…"] } */
@@ -1362,19 +1389,20 @@ const ava = c => { const p = picsOf(c)[0]; return p ? `<img class="mono ava" src
 const gallery = list => list.length ? `<div class="gal wide">${list.map(p => `<button type="button" class="gp" data-zoom="npc/${p}.webp"><img src="npc/${p}.webp" alt="Внешность" loading="lazy"></button>`).join("")}</div>` : "";
 let charFilter = "Все", charQuery = "";
 const MASTER_NPCS = () => D.chars.filter(c => !GR_DEAD().has(c.key)).concat([{ key: "callahan", name: "Семья Каллахан", role: "Люсиль, Патрик и Дуайт", age: "", fac: "Без фракции", family: true }]);
-const NPC_CARD_PICS = new Set("valdis-1 olivia-1 silvana-2 kayden-1 redrif-1 margaret-1 penelopa-1 kain-1 talira-1 mirra-1 lucille-1 dwight-1 patrick-1".split(" "));
+let NPC_OVR = {};
 function charCards(list) {
   const q = charQuery.trim().toLowerCase();
   const shown = list.filter(c => (charFilter === "Все" || c.fac === charFilter) && (!q || (c.name + " " + (c.role || "") + (c.family ? " Люсиль Патрик Дуайт Каллахан" : "")).toLowerCase().includes(q)));
   if (!shown.length) return `<p class="note">${q ? "Никого не нашлось. Проверьте имя." : "Пусто."}</p>`;
   return `<div class="sdeck npc-deck">${shown.map((c, i) => { const f = facByName(c.fac), col = (f || {}).color || NONE_COL, pic = picsOf(c)[0];
-    return `<button type="button" class="sc npc-c" data-char="${c.key}" style="--i:${Math.min(i, 8) - 3};${scVarsT({ leather: scShade(col, -.35), metal: "gold" })}">${scFace({ n: c.name, title: c.role || "", img: pic ? `npc/${pic}${NPC_CARD_PICS.has(pic) ? "-c" : "-t"}.webp` : "" })}</button>`; }).join("")}</div>`;
+    return `<button type="button" class="sc npc-c" data-char="${c.key}" style="--i:${Math.min(i, 8) - 3};${scVarsT({ leather: scShade(col, -.35), metal: "gold" })}">${scFace(Object.assign({ n: c.name, title: c.role || "" }, npcCardImg(c.key, NPC_OVR[c.key], picsOf(c))))}</button>`; }).join("")}</div>`;
 }
 let NPC_SIDE = "master";
 function npcAllHTML() {
   const sw = `<div class="fpick npc-sw bh-c">${[["master", "NPC мастера", MASTER_NPCS().length], ["players", "NPC игроков", PLAYER_NPCS.length]].map(([k, t, n]) => `<button type="button" class="fp-b" data-npcside="${k}" aria-pressed="${NPC_SIDE === k}">${t}<span>${n}</span></button>`).join("")}</div>`;
   return boardHead("NPC", "Личности Велариса", "Герои мастера и персонажи, которых игроки ввели в мир.", "star") + sw + `<div id="npc-side">${charsHTML(NPC_SIDE, true)}</div>`;
 }
+npLoad(false).then(m => { NPC_OVR = m; if (Object.keys(m).length) { const box = $("#npc-side"); if (box) box.innerHTML = charsHTML(NPC_SIDE, true); } });
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-npcside]"); if (!b) return; NPC_SIDE = b.dataset.npcside; charFilter = "Все"; document.querySelectorAll("[data-npcside]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); const box = $("#npc-side"); if (box) box.innerHTML = charsHTML(NPC_SIDE, true); });
 function charsHTML(which, bare) {
   if (which === "players") {
