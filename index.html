@@ -725,7 +725,7 @@ function whoHTML(ids, players) {
 }
 
 const FAC_NONE = { id: "none", name: "Странники", color: "#8a8170" };
-const facById = id => id === "none" ? FAC_NONE : (typeof FACTIONS !== "undefined" ? FACTIONS.find(f => f.id === id) : null);
+const facById = id => id === "none" ? null : (typeof FACTIONS !== "undefined" ? FACTIONS.find(f => f.id === id) : null);
 const facColor = id => (facById(id) || {}).color || "";
 const FAC_KEYS = [["bastards", /ублюд/i], ["order", /орден|пылающ|инквизи/i], ["shadows", /тен[иь]\s*кальдерон|кальдерон/i], ["guild", /гильди|плата\s*и\s*сталь|авантюрист/i], ["dead", /усопш|погребен/i], ["council", /тайн\w*\s*совет/i], ["health", /совет\w*\s*здрав/i], ["tri", /триедин/i], ["souls", /певч/i], ["houses", /знатн|благородн\w*\s*дом|дом\s+[А-ЯЁ]/], ["crown", /импер|корон|престол|двор(?!ян)|страж/i]];
 function facFromText(t) {
@@ -738,8 +738,8 @@ const normName = s => String(s || "").toLowerCase().replace(/ё/g, "е").replace
 const initials = n => String(n || "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w.charAt(0).toUpperCase() + ".").join(" ");
 
 const FAC_HIDDEN = ["houses"];
-const facsOf = c => (!c ? [] : Array.isArray(c.facs) ? c.facs : c.fac ? [c.fac] : []).filter(f => !FAC_HIDDEN.includes(f));
-function setFacs(c, arr) { arr = [...new Set(arr.filter(Boolean))]; if (arr.length > 1) arr = arr.filter(x => x !== "none"); if (arr.length) { c.facs = arr; c.fac = arr[0]; } else { delete c.facs; delete c.fac; } }
+const facsOf = c => (!c ? [] : Array.isArray(c.facs) ? c.facs : c.fac ? [c.fac] : []).filter(f => f !== "none" && !FAC_HIDDEN.includes(f));
+function setFacs(c, arr) { arr = [...new Set(arr.filter(x => x && x !== "none"))]; if (arr.length) { c.facs = arr; c.fac = arr[0]; } else { delete c.facs; delete c.fac; } }
 function facBg(c) {
   const f = facsOf(c).map(facColor).filter(Boolean);
   if (!f.length) return "";
@@ -747,7 +747,7 @@ function facBg(c) {
   const stops = f.map((col, i) => `color-mix(in srgb, ${col} ${Math.round(12 + 26 * i / (f.length - 1))}%, #f7efdc)`).join(", ");
   return `background:linear-gradient(90deg, ${stops});border-color:color-mix(in srgb, ${f[f.length - 1]} 50%, rgba(111,85,50,.4));`;
 }
-const facNames = c => facsOf(c).map(id => id === "none" ? "Странник" : (facById(id) || {}).name).filter(Boolean).join(" и ");
+const facNames = c => facsOf(c).map(id => (facById(id) || {}).name).filter(Boolean).join(" и ");
 
 const WANTED_STATUS = { hunt: "В розыске", caught: "Пойман", dead: "Мёртв", off: "Розыск снят" };
 const WANTED_SEED = [

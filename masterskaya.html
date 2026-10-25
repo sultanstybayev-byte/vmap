@@ -506,7 +506,7 @@ function whoHTML(ids, players) {
 }
 
 const FAC_NONE = { id: "none", name: "Странники", color: "#8a8170" };
-const facById = id => id === "none" ? FAC_NONE : (typeof FACTIONS !== "undefined" ? FACTIONS.find(f => f.id === id) : null);
+const facById = id => id === "none" ? null : (typeof FACTIONS !== "undefined" ? FACTIONS.find(f => f.id === id) : null);
 const facColor = id => (facById(id) || {}).color || "";
 const FAC_KEYS = [["bastards", /ублюд/i], ["order", /орден|пылающ|инквизи/i], ["shadows", /тен[иь]\s*кальдерон|кальдерон/i], ["guild", /гильди|плата\s*и\s*сталь|авантюрист/i], ["dead", /усопш|погребен/i], ["council", /тайн\w*\s*совет/i], ["health", /совет\w*\s*здрав/i], ["tri", /триедин/i], ["souls", /певч/i], ["houses", /знатн|благородн\w*\s*дом|дом\s+[А-ЯЁ]/], ["crown", /импер|корон|престол|двор(?!ян)|страж/i]];
 function facFromText(t) {
@@ -519,8 +519,8 @@ const normName = s => String(s || "").toLowerCase().replace(/ё/g, "е").replace
 const initials = n => String(n || "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w.charAt(0).toUpperCase() + ".").join(" ");
 
 const FAC_HIDDEN = ["houses"];
-const facsOf = c => (!c ? [] : Array.isArray(c.facs) ? c.facs : c.fac ? [c.fac] : []).filter(f => !FAC_HIDDEN.includes(f));
-function setFacs(c, arr) { arr = [...new Set(arr.filter(Boolean))]; if (arr.length > 1) arr = arr.filter(x => x !== "none"); if (arr.length) { c.facs = arr; c.fac = arr[0]; } else { delete c.facs; delete c.fac; } }
+const facsOf = c => (!c ? [] : Array.isArray(c.facs) ? c.facs : c.fac ? [c.fac] : []).filter(f => f !== "none" && !FAC_HIDDEN.includes(f));
+function setFacs(c, arr) { arr = [...new Set(arr.filter(x => x && x !== "none"))]; if (arr.length) { c.facs = arr; c.fac = arr[0]; } else { delete c.facs; delete c.fac; } }
 function facBg(c) {
   const f = facsOf(c).map(facColor).filter(Boolean);
   if (!f.length) return "";
@@ -528,7 +528,7 @@ function facBg(c) {
   const stops = f.map((col, i) => `color-mix(in srgb, ${col} ${Math.round(12 + 26 * i / (f.length - 1))}%, #f7efdc)`).join(", ");
   return `background:linear-gradient(90deg, ${stops});border-color:color-mix(in srgb, ${f[f.length - 1]} 50%, rgba(111,85,50,.4));`;
 }
-const facNames = c => facsOf(c).map(id => id === "none" ? "Странник" : (facById(id) || {}).name).filter(Boolean).join(" и ");
+const facNames = c => facsOf(c).map(id => (facById(id) || {}).name).filter(Boolean).join(" и ");
 
 const WANTED_STATUS = { hunt: "В розыске", caught: "Пойман", dead: "Мёртв", off: "Розыск снят" };
 const WANTED_SEED = [
@@ -2588,14 +2588,14 @@ function ankParse(p) {
     if (/^(?:8\s*[.)]|[\d.)]*\s*Принадлежност)/i.test(L) && /принадлеж|фракц|обществ|8\s*[.)]/i.test(L)) {
       const parts = [L.replace(/^[\d.)\s]*/, "").replace(/^Принадлежност\S*(\s+к\s+(какому-?либо\s+)?(обществу|фракци\S*)(,\s*(обществу|фракци\S*))?)?[\s.:—–-]*/i, "")];
       for (let k = i + 1; k < Math.min(lines.length, i + 6); k++) { if (/^\d+\s*[.)]/.test(lines[k])) break; if (lines[k]) parts.push(lines[k]); }
-      facRaw = parts.join(" ").replace(/\s+/g, " ").trim().slice(0, 160); fac = facFromText(facRaw) || "none";
+      facRaw = parts.join(" ").replace(/\s+/g, " ").trim().slice(0, 160); fac = facFromText(facRaw) || "";
     }
   }
   if (!name) return null;
   return { post: p.id, date: p.date, player, name, fac, facRaw };
 }
 const findChar = (p, name) => p ? charsOf(p).find(c => normName(c.name) === normName(name) || (normName(name).length > 4 && (normName(c.name).includes(normName(name)) || normName(name).includes(normName(c.name))))) : null;
-const facOpts = sel => `<option value="">— не определена —</option>${FACTIONS.map(f => `<option value="${f.id}"${sel === f.id ? " selected" : ""}>${esc(f.name)}</option>`).join("")}<option value="none"${sel === "none" ? " selected" : ""}>Странник</option>`;
+const facOpts = sel => `<option value="">— не определена —</option>${FACTIONS.map(f => `<option value="${f.id}"${sel === f.id ? " selected" : ""}>${esc(f.name)}</option>`).join("")}`;
 function ankHTML() {
   if (!ANK) return "";
   const byId = new Map(PL.list.map(p => [p.id, p]));
@@ -2845,7 +2845,7 @@ document.addEventListener("change", e => { const t = e.target; if (t.matches && 
    Хранится у персонажей в docs/players.json: chars[].fac, а NPC мастера — в npcs[].
    ===================================================================== */
 let FPL = { list: [], npcs: [] }, fPick = null;
-const facAll = () => FACTIONS.filter(f => !FAC_HIDDEN.includes(f.id)).concat([FAC_NONE]);
+const facAll = () => FACTIONS.filter(f => !FAC_HIDDEN.includes(f.id));
 function facMembers(fid) {
   const out = [];
   (FPL.list || []).filter(p => !p.left).forEach(p => charsOf(p).forEach(c => { if (facsOf(c).includes(fid)) out.push({ key: p.id + ":" + c.id, c, p }); }));
@@ -2869,7 +2869,7 @@ function faDraw() {
   const cnt = id => facMembers(id).length;
   const TOP = ["crown"]; /* Императорская власть — всегда сверху */
   const order = FACTIONS.filter(f => !TOP.includes(f.id) && !FAC_HIDDEN.includes(f.id)).sort((a, b) => cnt(b.id) - cnt(a.id) || FACTIONS.indexOf(a) - FACTIONS.indexOf(b));
-  const all = TOP.map(id => FACTIONS.find(f => f.id === id)).filter(Boolean).concat(order, [FAC_NONE]);
+  const all = TOP.map(id => FACTIONS.find(f => f.id === id)).filter(Boolean).concat(order);
   box.innerHTML = all.map(f => { const M = facMembers(f.id);
     return `<section class="fa-card" data-fid="${f.id}" style="--fc:${f.color}"><header><i></i><b>${esc(f.name)}</b><span>${M.length}</span></header>
       <div class="fa-mem">${M.map(memberChip).join("")}<button type="button" class="ava-add" data-faadd="${f.id}" aria-label="Добавить персонажа" title="Добавить персонажа">+</button></div>
@@ -2887,7 +2887,7 @@ function faResults(box, val) {
 async function faInit() { try { FPL = await plLoad(!!ghCfg().token); FPL.list = FPL.list || []; FPL.npcs = FPL.npcs || []; } catch (err) { toast("Не получилось загрузить: " + err.message); } faDraw(); }
 async function faSet(key, fac, add) {
   if (!ghCfg().token) { toast("Чтобы сохранить, подключите ключ GitHub."); return; }
-  const upd = c => { const cur = facsOf(c); setFacs(c, add ? (fac === "none" ? ["none"] : cur.filter(x => x !== "none").concat([fac])) : cur.filter(x => x !== fac)); };
+  const upd = c => { const cur = facsOf(c); setFacs(c, add ? cur.concat([fac]) : cur.filter(x => x !== fac)); };
   const apply = P => {
     if (key.startsWith("npc:")) { P.npcs = P.npcs || []; const n = P.npcs.find(x => x.id === key.slice(4)); if (n) { upd(n); if (!facsOf(n).length) P.npcs = P.npcs.filter(x => x !== n); } return; }
     const [pid, cid] = key.split(":"), p = P.list.find(x => x.id === +pid); if (!p) return;
@@ -3658,7 +3658,7 @@ function haForm() {
         ${fld("n", "Имя на карте", "Эдмунд Грей")}${fld("title", "Кто он (подпись под именем)", "Наёмник из Эпиры")}
         <span class="ha-l">Образец карты</span><div class="ha-tpls">${T.map(t => `<button type="button" data-hatpl="${t.id}" aria-pressed="${cardTpl(f, HA.tpls).id === t.id}" title="${esc(t.n)}" style="${scVarsT(t)}"><i></i><small>${esc(t.n)}</small></button>`).join("")}</div></div></div>
     <div class="va-grid ha-g3">${fld("age", "Возраст", "34 года")}<div class="va-f"><span>Пол</span><div class="lw-seg ha-sex">${[["Мужчина", "М"], ["Женщина", "Ж"]].map(([v, l]) => `<button type="button" data-hasex="${v}" aria-pressed="${heroSex(f.sex) === v}" title="${v}">${l}</button>`).join("")}</div></div>
-      <label class="va-f"><span>Фракция</span><select data-haf="fac"><option value="">— нет —</option><option value="none"${f.fac === "none" ? " selected" : ""}>Странник</option>${FACTIONS.map(x => `<option value="${x.id}"${f.fac === x.id ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label></div>
+      <label class="va-f"><span>Фракция</span><select data-haf="fac"><option value="">— нет —</option>${FACTIONS.map(x => `<option value="${x.id}"${f.fac === x.id ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label></div>
     <span class="ha-l">Навыки</span><div class="ha-skills">${(f.skills || []).map((s, i) => `<div class="ha-sk"><input type="text" data-hask="${i}" value="${esc(s[0])}" placeholder="Владение арбалетом"><select data-halv="${i}">${HERO_LEVELS.map((l, n) => `<option value="${n}"${+s[1] === n ? " selected" : ""}>${l}</option>`).join("")}</select><button type="button" data-haskdel="${i}" aria-label="Убрать навык">×</button></div>`).join("")}<button type="button" class="btn ghost" data-haskadd>+ навык</button></div>
     ${fld("home", "Местожительство", "Где живёт, что есть в жилище", 3)}${fld("inv", "Инвентарь", "Оружие, снаряжение, вещи", 3)}${fld("money", "Финансы и имущество", "Монеты, жильё, имущество", 2)}${fld("bio", "Биография", "4–7 предложений…", 6)}
     <div class="actions va-save"><button type="button" class="btn" data-hasave ${HA.busy ? "disabled" : ""}>${HA.busy ? "Сохраняю…" : "Сохранить карту"}</button><button type="button" class="btn ghost" data-hacancel>Отмена</button>${edit ? `<button type="button" class="btn ghost" data-hadel>${HA.delAsk ? "Точно убрать карту?" : "Убрать из колоды"}</button>` : ""}</div></div>`;
