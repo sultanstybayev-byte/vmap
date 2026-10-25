@@ -680,7 +680,11 @@
     },
     {
      "id": "cmvnv54fd73t",
-     "name": "Морох"
+     "name": "Морох",
+     "facs": [
+      "bastards"
+     ],
+     "fac": "bastards"
     }
    ]
   },
