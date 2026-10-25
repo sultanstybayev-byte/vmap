@@ -882,7 +882,11 @@
     },
     {
      "id": "cmvnmi73c29w",
-     "name": "Ранульф"
+     "name": "Ранульф",
+     "facs": [
+      "bastards"
+     ],
+     "fac": "bastards"
     }
    ]
   },
