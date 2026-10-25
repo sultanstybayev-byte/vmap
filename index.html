@@ -1994,12 +1994,14 @@ document.addEventListener("click", e => {
   if (!t.closest(".pp") && document.querySelector(".pp.open")) ppRedraw(false, document.querySelector(".pp.open").dataset.ppkind);
 });
 addEventListener("keydown", e => { if (e.key === "Escape" && document.querySelector(".pp.open")) ppRedraw(false, document.querySelector(".pp.open").dataset.ppkind); if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches("[data-qopen]")) { e.preventDefault(); e.target.click(); } });
+const DOC_ART = { pismo: ["pismo"], kniga: ["kniga", "kniga2"], stopka: ["stopka"] };
+const docArt = d => { const L = DOC_ART[d.kind] || DOC_ART.stopka; return L[(+d.no || 0) % L.length]; };
 function packDocsDraw() {
   const box = $("#pack-docs"); if (!box || !DOCLIST) return;
   const seen = seenDocs(), mine = DOCLIST.filter(mineDoc).sort((a, b) => b.no - a.no);
   const open = DOCLIST.filter(d => (ADMIN || visOf(d) === "all") && !mineDoc(d)).sort((a, b) => b.no - a.no);
   const paper = (d, i) => `<button type="button" class="paper-doc k-${d.kind || "x"}${visOf(d) === "to" ? " secret" : ""}${visOf(d) === "hidden" ? " hid" : ""}${mineDoc(d) ? "" : " open"}" data-doc="${d.no}" style="--r:${tilt(i + 3) * .7}deg" title="${mineDoc(d) ? (visOf(d) === "to" ? "Тайно, лично вам" : "Лично вам") : ""}">
-      ${mineDoc(d) && !seen.has(d.no) ? `<em class="new">новое</em>` : ""}${visOf(d) === "to" && mineDoc(d) ? `<i class="doc-secret" title="Тайно"></i>` : ""}<span class="doc-art"><img src="docart/${DOC_KINDS[d.kind] ? d.kind : "stopka"}.webp" alt="" loading="lazy"></span>
+      ${mineDoc(d) && !seen.has(d.no) ? `<em class="new">новое</em>` : ""}${visOf(d) === "to" && mineDoc(d) ? `<i class="doc-secret" title="Тайно"></i>` : ""}<span class="doc-art"><img src="docart/${docArt(d)}.webp" alt="" loading="lazy"></span>
       <span class="env-cap"><small>${esc(DOC_KINDS[d.kind] || "Документ")} · №${d.no}</small><b>${esc(d.title || "Без названия")}</b>${d.note ? `<span>${esc(d.note)}</span>` : ""}</span></button>`;
   if (PACK_FOLDER !== null) {
     const ids = new Set(FOLDERS.map(f => f.id)), f = FOLDERS.find(x => x.id === PACK_FOLDER) || { id: "", name: "Разное" };
