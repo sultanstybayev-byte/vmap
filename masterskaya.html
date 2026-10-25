@@ -3400,10 +3400,10 @@ function fateAdminHTML() {
 }
 async function fateAdminInit() {
   try { const [F, P] = await Promise.all([fateLoad(!!ghCfg().token), plLoad(!!ghCfg().token)]); FA.cards = F.cards; FA.players = (P.list || []).filter(p => !p.left); } catch (e) { toast("Не получилось загрузить: " + e.message); }
-  faVisDraw(); faDraw();
+  faVisDraw(); fadDraw();
 }
 function faHolders(id) { const H = []; FA.players.forEach(p => { if ((p.fate || []).includes(id)) H.push({ p, c: null }); charsOf(p).forEach(c => { if (fateOfChar(c).includes(id)) H.push({ p, c }); }); }); return H; }
-function faDraw() {
+function fadDraw() {
   const box = document.getElementById("fa-box"); if (!box) return;
   const sel = FA.cards.find(c => c.id === FA.sel);
   box.innerHTML = `<div class="fa-wrap"><div class="fa-deck">${FATE_GROUPS.map(([g, name, col]) => { const L = FA.cards.filter(c => (c.g || "azure") === g); return L.length ? `<h3 style="color:color-mix(in srgb, ${col} 50%, #2a1a0c)">${esc(name)} · ${L.length}</h3><div class="fa-grid">${L.map(c => `<div class="fa-cell${c.id === FA.sel ? " on" : ""}">${fateCardHTML(c, `data-fasel="${c.id}"`, 112)}${faHolders(c.id).length ? `<i class="fa-cnt" title="Выдано">${faHolders(c.id).length}</i>` : ""}${c.buff || c.debuff || c.act ? "" : `<i class="fa-empty" title="Описание не заполнено">!</i>`}</div>`).join("")}</div>` : ""; }).join("")}
@@ -3453,35 +3453,35 @@ document.addEventListener("change", async e => {
 });
 document.addEventListener("click", async e => {
   const t = e.target; if (!t.closest || !t.closest(".fa")) return;
-  const s = t.closest("[data-fasel]"); if (s) { FA.sel = s.dataset.fasel; FA.form = null; FA.giveP = ""; FA.giveC = ""; FA.delAsk = false; faDraw(); const ed = document.getElementById("fa-ed"); if (ed && innerWidth < 900) ed.scrollIntoView({ behavior: "smooth" }); return; }
+  const s = t.closest("[data-fasel]"); if (s) { FA.sel = s.dataset.fasel; FA.form = null; FA.giveP = ""; FA.giveC = ""; FA.delAsk = false; fadDraw(); const ed = document.getElementById("fa-ed"); if (ed && innerWidth < 900) ed.scrollIntoView({ behavior: "smooth" }); return; }
   if (!ghCfg().token && t.closest("[data-fanew],[data-fasave],[data-fadel],[data-fatake],[data-fagivebtn]")) return toast("Сначала подключите ключ GitHub.");
   if (t.closest("[data-fanew]")) {
     const id = "c" + Date.now().toString(36), card = { id, g: "azure", n: "Новая карта", img: "fate/jinx.webp", buff: "", debuff: "", act: "" };
-    try { FA.cards = (await fateUpdate(F => F.cards.push(card), "Карты Судьбы: новая карта")).cards; FA.sel = id; FA.form = null; faDraw(); toast("Карта добавлена — загрузите для неё рисунок."); } catch (err) { toast("Не получилось: " + err.message); }
+    try { FA.cards = (await fateUpdate(F => F.cards.push(card), "Карты Судьбы: новая карта")).cards; FA.sel = id; FA.form = null; fadDraw(); toast("Карта добавлена — загрузите для неё рисунок."); } catch (err) { toast("Не получилось: " + err.message); }
     return;
   }
   if (t.closest("[data-fasave]")) {
     const f = FA.form, item = {}; ["id", "g", "n", "img", "buff", "debuff", "act"].forEach(k => item[k] = String(f[k] || "").trim());
     if (!item.n) return toast("Впишите название карты.");
-    FA.busy = true; faDraw();
+    FA.busy = true; fadDraw();
     try { FA.cards = (await fateUpdate(F => { const i = F.cards.findIndex(c => c.id === item.id); if (i >= 0) F.cards[i] = item; else F.cards.push(item); }, `Карты Судьбы: ${item.n}`)).cards; FA.form = null; toast("Карта сохранена. На сайте обновится через минуту."); } catch (err) { toast("Не получилось: " + err.message); }
-    FA.busy = false; faDraw(); return;
+    FA.busy = false; fadDraw(); return;
   }
   if (t.closest("[data-fadel]")) {
     if (!FA.delAsk) { FA.delAsk = true; document.getElementById("fa-ed").innerHTML = faEditor(FA.cards.find(c => c.id === FA.sel)); setTimeout(() => { if (FA.delAsk) { FA.delAsk = false; const ed = document.getElementById("fa-ed"); if (ed && FA.sel) ed.innerHTML = faEditor(FA.cards.find(c => c.id === FA.sel)); } }, 4000); return; }
     const id = FA.sel; FA.delAsk = false;
     try { FA.cards = (await fateUpdate(F => { F.cards = F.cards.filter(c => c.id !== id); }, "Карты Судьбы: удалена карта")).cards; if (faHolders(id).length) await faPlayers(p => { if (p.fate) p.fate = p.fate.filter(x => x !== id); if (Array.isArray(p.chars)) p.chars.forEach(c => { if (c.fate) c.fate = c.fate.filter(x => x !== id); }); }, "Карты Судьбы: карта забрана у всех"); FA.sel = null; FA.form = null; toast("Карта удалена."); } catch (err) { toast("Не получилось: " + err.message); }
-    faDraw(); return;
+    fadDraw(); return;
   }
   const tk = t.closest("[data-fatake]"); if (tk) {
     const [pid, cid] = tk.dataset.fatake.split(":"), id = FA.sel;
     try { await faPlayers(p => { if (p.id !== +pid) return; if (!cid) { if (p.fate) p.fate = p.fate.filter(x => x !== id); return; } if (Array.isArray(p.chars)) p.chars.forEach(c => { if (c.id === cid && c.fate) c.fate = c.fate.filter(x => x !== id); }); }, "Карты Судьбы: карта забрана"); toast("Карта забрана."); } catch (err) { toast("Не получилось: " + err.message); }
-    faDraw(); return;
+    fadDraw(); return;
   }
   if (t.closest("[data-fagivebtn]")) {
     const pid = +FA.giveP, cid = FA.giveC, id = FA.sel; if (!pid) return toast("Выберите игрока."); if (!cid) return toast("Выберите его персонажа.");
     try { await faPlayers(p => { if (p.id !== pid) return; if (!Array.isArray(p.chars)) setChars(p, charsOf(p)); const c = p.chars.find(x => x.id === cid); if (!c) return; if (fateOfChar(c).length && !fateOfChar(c).includes(id)) throw new Error("у этого персонажа уже есть Карта Судьбы — сначала заберите её"); c.fate = [id]; }, "Карты Судьбы: карта выдана персонажу"); const p = FA.players.find(x => x.id === pid), c = p && charsOf(p).find(x => x.id === cid); FA.giveC = ""; toast(`Карта выдана${c ? ": " + c.name : ""}. Она уже на его карте в Колоде сердец и в сумке.`); } catch (err) { toast("Не получилось: " + err.message); }
-    faDraw();
+    fadDraw();
   }
 });
 
