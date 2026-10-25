@@ -1898,7 +1898,7 @@ const SATCHEL_SVG = `<svg class="bagart" viewBox="0 0 240 190" aria-hidden="true
     <rect x="146" y="104" width="28" height="20" rx="3" fill="none" stroke="url(#tbr)" stroke-width="3.5"/><path d="M160 104v12" stroke="url(#tbr)" stroke-width="2.6" stroke-linecap="round"/></g>
   <circle cx="30" cy="66" r="4" fill="url(#tbr)"/><circle cx="210" cy="66" r="4" fill="url(#tbr)"/>
 </svg>`;
-const BAG_SLOTS = 8;
+const BAG_SLOTS = 6, BAG_MAX = 6;
 const BAG_TAGS = { plot: "Сюжетный", quest: "Квестовый", "": "Особый" };
 const bagIc = (k, pct) => `<svg viewBox="0 0 24 24" aria-hidden="true">${icScaled((iconById(k || "seal") || iconById("seal") || [])[2] || "", pct)}</svg>`;
 let FATE = null;
@@ -1919,7 +1919,7 @@ document.addEventListener("click", e => {
 });
 let BAG_ICOPEN = -1;
 let BAG_SEL = null, BAG_DATA = null, BAG_OPEN_ITEM = -1, BAG_EDIT = null, PACK_FOLDER = null;
-function bagOf(p) { const b = (p && p.bag) || {}; return { slots: Math.max(1, +b.slots || BAG_SLOTS), items: Array.isArray(b.items) ? b.items : [] }; }
+function bagOf(p) { const b = (p && p.bag) || {}; return { slots: Math.min(BAG_MAX, Math.max(1, +b.slots || BAG_SLOTS)), items: Array.isArray(b.items) ? b.items : [] }; }
 function bagHTML() {
   setTimeout(bagInit, 0);
   return `<div class="bagwrap wide" id="bagwrap">
@@ -2019,7 +2019,7 @@ document.addEventListener("input", e => { const t = e.target; if (!t.dataset || 
 function bagEditorHTML(p) {
   const E = BAG_EDIT;
   return `<div class="bag-ed"><div class="bag-head"><div><b>${esc(plName(p))}</b><small>Правка сумки</small></div></div>
-    <label class="bag-slots">Слотов в сумке: <input type="number" min="1" max="40" data-bagslots value="${E.slots}"></label>
+    <label class="bag-slots">Слотов в сумке: <input type="number" min="1" max="6" data-bagslots value="${E.slots}"></label>
     ${E.items.map((it, i) => `<div class="bag-row" data-bagrow="${i}">
       <div class="bag-icwrap"><button type="button" class="bag-iccur" data-bagicopen="${i}" title="Сменить значок">${bagIc(it.ic, it.ics)}<small>${BAG_ICOPEN === i ? "Скрыть" : "Значок"}</small></button>${BAG_ICOPEN === i ? icPicker("bag", "data-bagic", iconById(it.ic) ? (ICON_LEGACY[it.ic] || it.ic) : "") + icSize(`data-bagics="${i}"`, it.ics) : ""}</div>
       <div class="bag-fields"><input type="text" data-bagf="${i}:n" value="${esc(it.n || "")}" placeholder="Название, например: Печать дома Верн">
@@ -2027,7 +2027,7 @@ function bagEditorHTML(p) {
         <textarea data-bagf="${i}:d" rows="2" placeholder="Описание: откуда, для чего, что в нём особенного">${esc(it.d || "")}</textarea></div>
       <div class="bag-rowops"><button type="button" data-bagmv="${i}:-1"${i ? "" : " disabled"} title="Выше">↑</button><button type="button" data-bagmv="${i}:1"${i < E.items.length - 1 ? "" : " disabled"} title="Ниже">↓</button><button type="button" data-bagdel="${i}" title="Убрать">✕</button></div>
     </div>`).join("")}
-    <div class="actions"><button type="button" class="btn ghost" data-bagadd>＋ Предмет</button></div>
+    <div class="actions"><button type="button" class="btn ghost" data-bagadd${E.items.length >= BAG_MAX ? " disabled" : ""}>＋ Предмет</button></div>
     <div class="actions bag-save"><button type="button" class="btn" data-bagsave>Сохранить</button><button type="button" class="btn ghost" data-bagcancel>Отмена</button></div></div>`;
 }
 document.addEventListener("change", e => {
@@ -2036,7 +2036,7 @@ document.addEventListener("change", e => {
 document.addEventListener("input", e => {
   const t = e.target; if (!BAG_EDIT) return;
   if (t.dataset.bagf) { const [i, k] = t.dataset.bagf.split(":"); BAG_EDIT.items[+i][k] = t.value; }
-  if (t.hasAttribute("data-bagslots")) BAG_EDIT.slots = Math.max(1, Math.min(40, +t.value || BAG_SLOTS));
+  if (t.hasAttribute("data-bagslots")) BAG_EDIT.slots = Math.max(1, Math.min(BAG_MAX, +t.value || BAG_SLOTS));
 });
 document.addEventListener("click", e => {
   const t = e.target; if (!t.closest) return;
@@ -2051,7 +2051,7 @@ document.addEventListener("click", e => {
   if (!BAG_EDIT) return;
   const io = t.closest("[data-bagicopen]"); if (io) { BAG_ICOPEN = BAG_ICOPEN === +io.dataset.bagicopen ? -1 : +io.dataset.bagicopen; bagDraw(); return; }
   const ic = t.closest("[data-bagic]"); if (ic && BAG_ICOPEN >= 0) { BAG_EDIT.items[BAG_ICOPEN].ic = ic.getAttribute("data-bagic"); const c = document.querySelector(`[data-bagicopen="${BAG_ICOPEN}"]`); if (c) c.innerHTML = bagIc(BAG_EDIT.items[BAG_ICOPEN].ic, BAG_EDIT.items[BAG_ICOPEN].ics) + "<small>Скрыть</small>"; return; }
-  if (t.closest("[data-bagadd]")) { BAG_EDIT.items.push({ n: "", d: "", t: "plot", ic: "seal" }); if (BAG_EDIT.items.length > BAG_EDIT.slots) BAG_EDIT.slots = BAG_EDIT.items.length; bagDraw(); return; }
+  if (t.closest("[data-bagadd]")) { if (BAG_EDIT.items.length >= BAG_MAX) return toast(`В сумке помещается не больше ${BAG_MAX} особых предметов.`); BAG_EDIT.items.push({ n: "", d: "", t: "plot", ic: "seal" }); if (BAG_EDIT.items.length > BAG_EDIT.slots) BAG_EDIT.slots = BAG_EDIT.items.length; bagDraw(); return; }
   const dl = t.closest("[data-bagdel]"); if (dl) { BAG_EDIT.items.splice(+dl.dataset.bagdel, 1); bagDraw(); return; }
   const mv = t.closest("[data-bagmv]"); if (mv) { const [i, d] = mv.dataset.bagmv.split(":").map(Number), L = BAG_EDIT.items; [L[i], L[i + d]] = [L[i + d], L[i]]; bagDraw(); return; }
   if (t.closest("[data-bagcancel]")) { BAG_EDIT = null; bagDraw(); return; }
