@@ -88,13 +88,39 @@
   },
   {
    "id": 316981455,
-   "play": false,
-   "char": "",
+   "play": true,
+   "char": "Абиссия Мирал, Этия Зофис, Шейли Элесмора, Астерия Тэлл, Валирия Лилитур",
    "name": "Шейли Элесмора",
    "photo": "https://sun1-27.vkuserphoto.ru/s/v1/ig2/hoIui-nSyew6DhRYET042zmHwGQo8AIRIW3YSWY-XWUBZnU2Ol2twN2aomAkndZMXaFF5BJtvROiSZEGAnGlPJ-g.jpg?quality=95&crop=79,53,381,381&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360&ava=1&cs=100x100",
    "role": "member",
    "left": false,
-   "chars": [],
+   "chars": [
+    {
+     "id": "cmvifte30b0b",
+     "name": "Абиссия Мирал",
+     "fac": "council"
+    },
+    {
+     "id": "cmviftjpn44l",
+     "name": "Этия Зофис",
+     "fac": "none"
+    },
+    {
+     "id": "cmvifvo4quhv",
+     "name": "Шейли Элесмора",
+     "fac": "souls"
+    },
+    {
+     "id": "cmvifw2p5ydv",
+     "name": "Астерия Тэлл",
+     "fac": "council"
+    },
+    {
+     "id": "cmvifyt3qydm",
+     "name": "Валирия Лилитур",
+     "fac": "shadows"
+    }
+   ],
    "heir": 625332348
   },
   {
@@ -1065,39 +1091,14 @@
   },
   {
    "id": 625332348,
-   "play": true,
-   "char": "Абиссия Мирал, Этия Зофис, Шейли Элесмора, Астерия Тэлл, Валирия Лилитур",
+   "play": false,
+   "char": "",
    "name": "Шейли Элесмора",
    "photo": "https://sun1-94.vkuserphoto.ru/s/v1/ig2/aisx38fsktHF3WdV2iV4WGPha7roVSmH-i3EeEgO5J4YKEzoVUIMFxTQMo-A4cy-6J38ZMSOfDcr7j3tI9ovw2XN.jpg?quality=95&crop=1,5,735,735&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360,480x480,540x540,640x640,720x720&ava=1&cs=100x100",
    "role": "editor",
    "left": false,
-   "chars": [
-    {
-     "id": "cmvifte30b0b",
-     "name": "Абиссия Мирал",
-     "fac": "council"
-    },
-    {
-     "id": "cmviftjpn44l",
-     "name": "Этия Зофис",
-     "fac": "none"
-    },
-    {
-     "id": "cmvifvo4quhv",
-     "name": "Шейли Элесмора",
-     "fac": "souls"
-    },
-    {
-     "id": "cmvifw2p5ydv",
-     "name": "Астерия Тэлл",
-     "fac": "council"
-    },
-    {
-     "id": "cmvifyt3qydm",
-     "name": "Валирия Лилитур",
-     "fac": "shadows"
-    }
-   ]
+   "chars": [],
+   "heir": 316981455
   },
   {
    "id": 879209275,
