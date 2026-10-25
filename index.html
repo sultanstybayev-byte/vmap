@@ -2002,7 +2002,7 @@ function packDocsDraw() {
   const open = DOCLIST.filter(d => (ADMIN || visOf(d) === "all") && !mineDoc(d)).sort((a, b) => b.no - a.no);
   const paper = (d, i) => `<button type="button" class="paper-doc k-${d.kind || "x"}${visOf(d) === "to" ? " secret" : ""}${visOf(d) === "hidden" ? " hid" : ""}${mineDoc(d) ? "" : " open"}" data-doc="${d.no}" style="--r:${tilt(i + 3) * .7}deg" title="${mineDoc(d) ? (visOf(d) === "to" ? "Тайно, лично вам" : "Лично вам") : ""}">
       ${mineDoc(d) && !seen.has(d.no) ? `<em class="new">новое</em>` : ""}${visOf(d) === "to" && mineDoc(d) ? `<i class="doc-secret" title="Тайно"></i>` : ""}<span class="doc-art"><img src="docart/${docArt(d)}.webp" alt="" loading="lazy"></span>
-      <span class="env-cap"><small>${esc(DOC_KINDS[d.kind] || "Документ")} · №${d.no}</small><b>${esc(d.title || "Без названия")}</b>${d.note ? `<span>${esc(d.note)}</span>` : ""}</span></button>`;
+      <span class="env-cap"><small>${esc(DOC_KINDS[d.kind] || "Документ")}</small><b>${esc(d.title || "Без названия")}</b>${d.note ? `<span>${esc(d.note)}</span>` : ""}</span></button>`;
   if (PACK_FOLDER !== null) {
     const ids = new Set(FOLDERS.map(f => f.id)), f = FOLDERS.find(x => x.id === PACK_FOLDER) || { id: "", name: "Разное" };
     const docs = open.filter(d => PACK_FOLDER ? d.folder === PACK_FOLDER : !d.folder || !ids.has(d.folder));
@@ -2118,7 +2118,7 @@ function myDocsDraw() {
   const mine = (DOCLIST || []).filter(mineDoc).sort((a, b) => b.no - a.no), seen = seenDocs();
   box.hidden = !mine.length; if (!mine.length) return;
   box.innerHTML = `<header><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><b>Мои документы</b><span>Выданы лично вам${mine.some(d => visOf(d) === "to") ? " — тайные не показывайте другим" : ""}</span></header>
-    <div class="docs">${mine.map(d => `<article class="doc mine${visOf(d) === "to" ? " secret" : ""}"><button type="button" class="doc-open" data-doc="${d.no}" data-mine="${d.no}"><span class="doc-k">${visOf(d) === "to" ? `<em class="seal">Тайно</em>` : ""}${esc(DOC_KINDS[d.kind] || "Документ")} · №${d.no}${seen.has(d.no) ? "" : ` <i class="new">новое</i>`}</span><b>${esc(d.title || "Без названия")}</b>${d.note ? `<span class="doc-n">${esc(d.note)}</span>` : ""}${d.updated || d.created ? `<small>${esc(d.updated || d.created)}</small>` : ""}</button></article>`).join("")}</div>`;
+    <div class="docs">${mine.map(d => `<article class="doc mine${visOf(d) === "to" ? " secret" : ""}"><button type="button" class="doc-open" data-doc="${d.no}" data-mine="${d.no}"><span class="doc-k">${visOf(d) === "to" ? `<em class="seal">Тайно</em>` : ""}${esc(DOC_KINDS[d.kind] || "Документ")}${ADMIN ? " · №" + d.no : ""}${seen.has(d.no) ? "" : ` <i class="new">новое</i>`}</span><b>${esc(d.title || "Без названия")}</b>${d.note ? `<span class="doc-n">${esc(d.note)}</span>` : ""}${d.updated || d.created ? `<small>${esc(d.updated || d.created)}</small>` : ""}</button></article>`).join("")}</div>`;
 }
 function myDocsBanner() {
   if (!MEMBER || !VK_ME) return;
@@ -2130,7 +2130,7 @@ function myDocsBanner() {
 }
 function docCardHTML(d) {
   return `<article class="doc${visOf(d) === "all" ? "" : " hid"}${visOf(d) === "to" ? " secret" : ""}" data-dno="${d.no}">
-      <button type="button" class="doc-open" data-doc="${d.no}"><span class="doc-k">${esc(DOC_KINDS[d.kind] || "Документ")} · №${d.no}${ADMIN ? ` <i class="v-${visOf(d)}">${VIS_NAMES[visOf(d)]}${visOf(d) !== "hidden" && (d.to || []).length ? ` · ${d.to.length} получ.` : ""}</i>` : ""}</span>
+      <button type="button" class="doc-open" data-doc="${d.no}"><span class="doc-k">${esc(DOC_KINDS[d.kind] || "Документ")}${ADMIN ? " · №" + d.no : ""}${ADMIN ? ` <i class="v-${visOf(d)}">${VIS_NAMES[visOf(d)]}${visOf(d) !== "hidden" && (d.to || []).length ? ` · ${d.to.length} получ.` : ""}</i>` : ""}</span>
         <b>${esc(d.title || "Без названия")}</b>${d.note ? `<span class="doc-n">${esc(d.note)}</span>` : ""}${d.updated || d.created ? `<small>${esc(d.updated || d.created)}</small>` : ""}</button>
       ${ADMIN ? `<div class="doc-ops">${canEdit() ? `<select class="doc-vis" data-docvis="${d.no}" aria-label="Кто видит">${Object.entries({ hidden: "Только админы", to: "Тайно — получателям", all: "Все игроки" }).map(([k, t]) => `<option value="${k}"${visOf(d) === k ? " selected" : ""}>${t}</option>`).join("")}</select>` : ""}<button type="button" data-workshop="edit-${d.no}">Изменить</button>${canEdit() ? `<label class="doc-mv"><span>В папку</span><select data-docmove="${d.no}"><option value="">Разное</option>${FOLDERS.map(f => `<option value="${esc(f.id)}"${d.folder === f.id ? " selected" : ""}>${esc(f.name)}</option>`).join("")}</select></label>` : ""}<button type="button" class="danger" data-docdel="${d.no}">Удалить</button></div>` : ""}
     </article>`;
