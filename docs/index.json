@@ -73,6 +73,17 @@
    "updated": "28 октября 2026 г.",
    "quest": "Кара Небесная",
    "folder": "f-mvrtjaty"
+  },
+  {
+   "no": 9,
+   "kind": "pismo",
+   "title": "Письмо",
+   "note": "",
+   "vis": "to",
+   "public": false,
+   "to": [],
+   "created": "28 октября 2026 г.",
+   "updated": "28 октября 2026 г."
   }
  ],
  "folders": [
