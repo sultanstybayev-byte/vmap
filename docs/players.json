@@ -719,22 +719,6 @@
    ]
   },
   {
-   "id": 817093997,
-   "play": false,
-   "char": "Рафалия Аушвиц Пэрес",
-   "name": "Афина Ламбракис",
-   "photo": "https://sun1-94.vkuserphoto.ru/s/v1/ig2/C3BEuOAaCRjzcGbDAz6qn4PSFW40_FLw0cGCB6zDYQPiAxK9x1brNYSW6eDFThCiepsonGqUyd24DEzVYe7WRHfF.jpg?quality=95&crop=0,5,734,734&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360,480x480,540x540,640x640,720x720&ava=1&cs=100x100",
-   "role": "member",
-   "left": false,
-   "chars": [
-    {
-     "id": "cmvifx4x7ger",
-     "name": "Рафалия Аушвиц Пэрес",
-     "fac": "dead"
-    }
-   ]
-  },
-  {
    "id": 835922526,
    "play": true,
    "char": "Сара Дальман",
@@ -1102,6 +1086,23 @@
  ],
  "updated": "26 октября 2026 г.",
  "removed": [
+  {
+   "id": 817093997,
+   "play": false,
+   "char": "Рафалия Аушвиц Пэрес",
+   "name": "Афина Ламбракис",
+   "photo": "https://sun1-94.vkuserphoto.ru/s/v1/ig2/C3BEuOAaCRjzcGbDAz6qn4PSFW40_FLw0cGCB6zDYQPiAxK9x1brNYSW6eDFThCiepsonGqUyd24DEzVYe7WRHfF.jpg?quality=95&crop=0,5,734,734&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360,480x480,540x540,640x640,720x720&ava=1&cs=100x100",
+   "role": "member",
+   "left": false,
+   "chars": [
+    {
+     "id": "cmvifx4x7ger",
+     "name": "Рафалия Аушвиц Пэрес",
+     "fac": "dead"
+    }
+   ],
+   "removedAt": "28 октября 2026 г."
+  },
   {
    "id": 662074570,
    "play": false,
