@@ -893,7 +893,7 @@ function letterHTML(extra = lwExtra()) {
     ${showTitle ? inp("title", LW.kind === "decree" ? "Заголовок" : "Штамп", LW.kind === "decree" ? "Указ" : "Тайно") : ""}
     ${LW.kind === "decree" ? inp("sub", "Под заголовком", "Именем Его Величества…") : ""}
     ${inp("place", LW.kind === "decree" ? "Где и когда дано" : "Место и дата", "Кальдерон, " + lwToday())}
-    ${LW.kind === "decree" ? "" : inp("greet", "Обращение", "Дорогой друг,")}
+    ${LW.kind === "decree" ? "" : `<div class="fld"><label for="lw-greet">Обращение</label><textarea id="lw-greet" data-lw="greet" rows="2" placeholder="Дорогой друг,  (можно в несколько строк)">${esc(LW.greet)}</textarea></div>`}
     <div class="fld"><label for="lw-body">Текст письма</label><textarea id="lw-body" data-lw="body" rows="8" placeholder="Новый абзац — с новой строки">${esc(LW.body)}</textarea></div>
     <div class="lw-chks lw-chk1">${chk("dropcap", "Расписная буквица в начале")}</div>
     ${LW.kind === "decree" ? "" : inp("close", "Прощание", "С почтением,")}
@@ -1096,6 +1096,17 @@ function strikeDraw(c, kind, x0, x1, fs, seed) {
   }
   c.restore();
 }
+function lwSplitLong(m, w, maxw) {
+  const k = strikeOf(w), pre = k ? w[0] : "", t = k ? w.slice(1) : w; if (m.measureText(t).width <= maxw) return [w];
+  const out = []; let cur = "";
+  for (const ch of t) { if (cur && m.measureText(cur + ch).width > maxw) { out.push(pre + cur); cur = ""; } cur += ch; }
+  if (cur) out.push(pre + cur); return out;
+}
+function lwWrap(m, words, maxw) {
+  const lines = []; let line = [], lw = 0; const sp = m.measureText(" ").width;
+  words.filter(Boolean).flatMap(w => lwSplitLong(m, w, maxw)).forEach(w => { const ww = m.measureText(strikeClean(w)).width; if (line.length && lw + sp + ww > maxw) { lines.push(line); line = []; lw = 0; } lw += (line.length ? sp : 0) + ww; line.push(w); });
+  if (line.length) lines.push(line); return lines;
+}
 async function lwPaint(cv, L, S = 2, stale = () => false) {
   const P = LW_PAPERS[L.paper] || LW_PAPERS.parch, H = LW_HANDS[L.hand] || LW_HANDS.marck;
   let ink = (LW_INKS[L.ink] || LW_INKS.black)[1];
@@ -1134,7 +1145,11 @@ async function lwPaint(cv, L, S = 2, stale = () => false) {
   }
   if (L.kind === "secret" && L.title) { ops.push({ t: "stamp", s: L.title, x: W / 2, y: y + 26 }); y += 70; }
   if (L.kind !== "decree" && L.place) { y += fs * .9; ops.push({ t: "txt", s: L.place, x: W - pad, y, f: font(fs * .85), a: "right", c: ink, wob: 1 }); y += lh * .7; }
-  if (L.kind !== "decree" && L.greet) { y += lh; ops.push({ t: "txt", s: L.greet, x: pad, y, f: font(fs * 1.06), a: "left", c: ink, wob: 2 }); y += lh * .35; }
+  if (L.kind !== "decree" && L.greet) {
+    m.font = font(fs * 1.06); let gi = 0;
+    String(L.greet).split("\n").map(t => t.trim()).filter(Boolean).forEach(par => lwWrap(m, par.split(/\s+/), cw).forEach(ln => { y += gi++ ? lh * .95 : lh; ops.push({ t: "txt", s: ln.join(" "), x: pad, y, f: font(fs * 1.06), a: "left", c: ink, wob: 2 + gi }); }));
+    y += lh * .35;
+  }
   m.font = font(fs);
   const sp = m.measureText(" ").width;
   const paras = strikeMark(L.body).split("\n");
@@ -1152,7 +1167,7 @@ async function lwPaint(cv, L, S = 2, stale = () => false) {
       ops.push({ t: "dc", ...dc });
       text = par.slice(0, at) + par.slice(at + 1); indent = 0;
     }
-    const words = text.split(/\s+/).filter(Boolean);
+    const words = text.split(/\s+/).filter(Boolean).flatMap(w => lwSplitLong(m, w, cw - (dc ? dc.s + 14 : 0) - fs * 1.6));
     let line = [], lw = 0, li = 0;
     const lineX = yy => dc && yy - lh * .8 < dc.y + dc.s + 4 ? dc.s + 14 : 0;
     const flush = last => {
@@ -1184,7 +1199,7 @@ async function lwPaint(cv, L, S = 2, stale = () => false) {
   }
   if (L.ps) {
     y += lh * .6; m.font = font(fs * .92);
-    const words = ("P.S. " + strikeMark(L.ps)).split(/\s+/); let line = [], lw = 0; const sp2 = m.measureText(" ").width;
+    const words = ("P.S. " + strikeMark(L.ps)).split(/\s+/).flatMap(w => lwSplitLong(m, w, cw)); let line = [], lw = 0; const sp2 = m.measureText(" ").width;
     const push = () => { y += lh * .95; ops.push({ t: "line", words: line, x: pad, y, f: font(fs * .92), c: ink, n: 500 + ops.length, w: lw }); line = []; lw = 0; };
     words.forEach(w => { const ww = m.measureText(strikeClean(w)).width; if (line.length && lw + sp2 + ww > cw) push(); lw += (line.length ? sp2 : 0) + ww; line.push(w); });
     if (line.length) push();
