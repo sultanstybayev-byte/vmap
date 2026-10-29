@@ -10,7 +10,7 @@ h1 { margin: 0 0 8px; font-size: 26px; color: #f0d696; } p { margin: 8px 0; colo
 code { font-size: 14px; color: #c9b88f; word-break: break-all; }
 </style></head><body><main>
 <h1>Тестовая страница</h1>
-<p>Если вы видите это внутри приложения ВК — переход на свою страницу сайта открывается прямо в приложении, без отдельного браузера.</p>
+<p id="where"></p>
 <p>Адрес: <code id="u"></code></p>
 <p id="vk"></p>
 <a class="b" id="back" href="index.html">← Вернуться в главное меню</a>
@@ -18,5 +18,8 @@ code { font-size: 14px; color: #c9b88f; word-break: break-all; }
 <script>
 const q = location.search; document.getElementById("u").textContent = location.href;
 document.getElementById("back").href = "index.html" + q;
+const inFrame = window.top !== window;
+document.getElementById("where").textContent = inFrame ? "Страница открыта внутри приложения ВК." : "Страница открыта в отдельной вкладке браузера — вне приложения ВК, на всю ширину экрана.";
+if (!inFrame) { const b = document.getElementById("back"); b.textContent = "Закрыть вкладку"; b.href = "#"; b.onclick = e => { e.preventDefault(); window.close(); }; }
 document.getElementById("vk").textContent = /vk_user_id=/.test(q) ? "Параметры ВК дошли — сайт знает, кто вы." : "Параметров ВК нет — страница открыта вне приложения.";
 </script></body></html>
