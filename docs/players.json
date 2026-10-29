@@ -315,7 +315,7 @@
   {
    "id": 557609350,
    "play": true,
-   "char": "Иден, Тарис Кха‑Зар, Вортигерн Пендра́гон, Идрис, Белль, Лисандр фон Венделл, Феликс Торнвуд",
+   "char": "Иден, Тарис Кха‑Зар, Вортигерн Пендра́гон, Идрис, Белль, Феликс Торнвуд",
    "name": "Cloudy Moth",
    "photo": "https://sun1-15.vkuserphoto.ru/s/v1/ig2/82OfixIpjATsSxDA2c86QxvbQ57cXYGFMRzoaFIyAXHLWlcJTgGx-f6o31cerOozFYbNwySzZi-G_JuX9LVawi_Y.jpg?quality=95&crop=16,0,702,702&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360,480x480,540x540,640x640&ava=1&cs=100x100",
    "role": "member",
@@ -360,12 +360,6 @@
      "id": "c557609350x4",
      "name": "Белль",
      "post": 52,
-     "fac": "shadows"
-    },
-    {
-     "id": "c557609350x5",
-     "name": "Лисандр фон Венделл",
-     "post": 50,
      "fac": "shadows"
     },
     {
