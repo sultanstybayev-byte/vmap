@@ -4170,14 +4170,14 @@ document.addEventListener("input", e => { const t = e.target; if (!AA.form || !t
 
 /* ---------- Мастерская: Записи смертей ----------
    Летопись: кто кого убил и как — в квесте или в странствиях. Это не кладбище: персонаж игрока остаётся у игрока,
-   похоронить его можно отдельно в «Игроки → Кладбище». Убийства из записей идут в «Кровавый счёт» Зала славы. */
+   похоронить можно галочкой «Похоронить» или во вкладке «Кладбище». Убийства из записей идут в «Кровавый счёт» Зала славы. */
 let DA = { list: [], players: [], qs: {}, npcs: [], form: null, busy: false, q: "", delAsk: false };
 const daToday = () => { const d = new Date(); return `${d.getDate()} ${["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"][d.getMonth()]}`; };
 const daBlank = () => ({ id: "d" + Date.now().toString(36), kind: "npc", ref: "", name: "", killers: [], how: "", where: "quest", quest: "", date: daToday(), pts: 1, fame: true });
 const daQuests = () => [...new Set(QUESTS.map(q => q.n).concat(Object.keys(DA.qs || {})))].filter(Boolean).sort((a, b) => a.localeCompare(b, "ru"));
 const daPlayer = id => DA.players.find(p => +p.id === +id);
 function deathAdminHTML() {
-  return `<div class="va da wide"><p class="lw-lead">Записи смертей — летопись того, кто кого убил и как: во время квеста или в странствиях. Персонаж игрока при этом не хоронится — для этого есть «Игроки → Кладбище». Убийства из записей засчитываются в «Кровавый счёт» Зала славы.</p><div id="da-box"><p class="note">Открываю летопись…</p></div></div>`;
+  return `<div class="va da wide"><p class="lw-lead">Книга павших: летопись того, кто кого убил и как — во время квеста или в странствиях. Отметьте «Похоронить», чтобы павший сразу лёг на кладбище (вкладка «Кладбище» выше). Убийства засчитываются в «Кровавый счёт» Зала славы.</p><div id="da-box"><p class="note">Открываю летопись…</p></div></div>`;
 }
 async function deathAdminInit() {
   const fr = !!ghCfg().token;
@@ -4215,7 +4215,7 @@ function daDrawForm() {
     <div class="va-grid wa-grid">${fld("date", "Когда", "23 октября")}<label class="va-f"><span>Очки за убийство</span><input type="number" class="da-pts" min="1" max="50" data-daf="pts" value="${+f.pts || 1}"></label></div>
     <div class="ga-kill"><span class="ga-kl">Кто убил</span><div class="ga-kchips">${DA.players.filter(p => plays(p) || (f.killers || []).includes(p.id)).sort((a, b) => String(a.name).localeCompare(String(b.name), "ru")).map(p => `<button type="button" data-dakill="${p.id}" aria-pressed="${(f.killers || []).includes(p.id)}">${esc(p.name)}</button>`).join("")}</div>
       <small class="note">Отметьте игроков, чьи персонажи убили. Никого — если погиб не от рук игроков.</small></div>
-    <label class="lw-chk"><input type="checkbox" data-dafame${f.fame !== false ? " checked" : ""}> Засчитать убийство в «Кровавый счёт» Зала славы</label>
+    <label class="lw-chk"><input type="checkbox" data-dafame${f.fame !== false ? " checked" : ""}> Засчитать убийство в «Кровавый счёт» Зала славы</label>${edit || f.kind === "other" ? "" : `<label class="lw-chk"><input type="checkbox" data-dabury${f.bury ? " checked" : ""}> Похоронить на кладбище${f.kind === "pc" ? " — персонаж уйдёт у игрока" : ""}</label>`}
     <div class="actions va-save"><button type="button" class="btn" data-dasave ${DA.busy ? "disabled" : ""}>${DA.busy ? "Сохраняю…" : "Сохранить запись"}</button><button type="button" class="btn ghost" data-dacancel>Отмена</button>${edit ? `<button type="button" class="btn ghost" data-dadel>${DA.delAsk ? "Точно удалить?" : "Удалить запись"}</button>` : ""}</div></div>`;
 }
 document.addEventListener("input", e => {
@@ -4227,6 +4227,7 @@ document.addEventListener("change", e => {
   const t = e.target; if (!t.closest || !t.closest(".da") || !DA.form) return;
   if (t.dataset.daf) { DA.form[t.dataset.daf] = t.value; if (t.dataset.daf === "ref") daDrawForm(); }
   if (t.matches("[data-dafame]")) DA.form.fame = t.checked;
+  if (t.matches("[data-dabury]")) DA.form.bury = t.checked;
 });
 document.addEventListener("click", async e => {
   const t = e.target; if (!t.closest || !t.closest(".da")) return;
@@ -4246,7 +4247,8 @@ document.addEventListener("click", async e => {
     if (f.where === "quest" && !f.quest) return toast("Выберите квест — или отметьте «В странствиях».");
     const item = { id: f.id, kind: f.kind, ref: f.kind === "other" ? "" : f.ref || "", name, killers: (f.killers || []).map(Number), how: String(f.how || "").trim(), where: f.where, quest: f.where === "quest" ? f.quest : "", date: String(f.date || "").trim(), pts: Math.max(1, Math.min(50, Math.round(+f.pts || 1))), fame: f.fame !== false };
     DA.busy = true; daDrawForm();
-    try { const D = await deathsUpdate(D => { const i = D.list.findIndex(x => x.id === item.id); if (i >= 0) D.list[i] = item; else D.list.push(item); }, `Записи смертей: ${item.name}`); DA.list = D.list; DA.form = null; toast("Запись сохранена."); } catch (err) { toast("Не получилось: " + err.message); }
+    try { const D = await deathsUpdate(D => { const i = D.list.findIndex(x => x.id === item.id); if (i >= 0) D.list[i] = item; else D.list.push(item); }, `Записи смертей: ${item.name}`); DA.list = D.list; const bury = f.bury && f.kind !== "other"; DA.form = null; toast("Запись сохранена.");
+      if (bury) { GA.form = Object.assign(gaBlank(), { kind: item.kind, who: item.kind === "pc" ? item.ref : "", npc: item.kind === "npc" ? item.ref : "", n: item.kind === "npc" && !item.ref ? item.name : "", cause: item.how, date: item.date, killers: [], pts: 1 }); DA.busy = false; location.hash = "kladbishche"; toast("Проверьте и нажмите «Похоронить»."); return; } } catch (err) { toast("Не получилось: " + err.message); }
     DA.busy = false; return daDraw();
   }
   if (t.closest("[data-dadel]")) {
@@ -4276,7 +4278,7 @@ const TOOLS = [
   ["geroi", "Колода сердец", heroAdminHTML, heroAdminInit],
   ["npc", "Перечень NPC", npcAdminHTML, npcAdminInit],
   ["predmety", "Предметы Судьбы", fateItemsHTML, null],
-  ["smerti", "Записи смертей", deathAdminHTML, deathAdminInit],
+  ["smerti", "Книга павших", deathAdminHTML, deathAdminInit],
   ["dostizheniya", "Достижения", achAdminHTML, achAdminInit]
 ];
 const RAIL_IC = {
@@ -4297,18 +4299,18 @@ const WS_MENU = [
   ]],
   ["Мир", [
     ["frak", "Фракции", "Описания, участники и знаки", ["frakcii", "znaki"]],
-    ["igroki", "Игроки", "Персонажи, сумки и кладбище", ["igroki", "kladbishche"]],
+    ["igroki", "Игроки", "Персонажи и сумки", ["igroki"]],
     ["geroi", "Колода сердец", "Карты персонажей игроков", ["geroi"]],
+    ["smerti", "Книга павших", "Кто кого убил, летопись и кладбище", ["smerti", "kladbishche"]],
     ["npc", "Перечень NPC", "Все NPC: анкеты, портреты, новые", ["npc"]]
   ]],
   ["Инвентарь", [
     ["sudba", "Карты Судьбы", "Описания карт и выдача игрокам", ["sudba"]],
     ["predmety", "Предметы Судьбы", "Особые вещи для персонажей — скоро", ["predmety"]],
-    ["slava", "Достижения", "Личные знаки отличия игроков", ["dostizheniya"]],
-    ["smerti", "Записи смертей", "Кто кого убил и как — в квестах и странствиях", ["smerti"]]
+    ["slava", "Достижения", "Личные знаки отличия игроков", ["dostizheniya"]]
   ]]
 ];
-const WS_TAB = { kvesty: "Квесты", rozysk: "Розыск", frakcii: "Фракции", znaki: "Знаки фракций", igroki: "Игроки", kladbishche: "Кладбище" };
+const WS_TAB = { kvesty: "Квесты", rozysk: "Розыск", frakcii: "Фракции", znaki: "Знаки фракций", igroki: "Игроки", kladbishche: "Кладбище", smerti: "Летопись" };
 const WS_IC = Object.assign({}, RAIL_IC, {
   doska: '<path d="M6 3h12v18H6z"/><circle cx="12" cy="3.5" r="1.2"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
   kvesty: '<path d="M6 3h12v18H6z"/><circle cx="12" cy="3.5" r="1.2"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
