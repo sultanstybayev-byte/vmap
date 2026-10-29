@@ -23,6 +23,6 @@
  ],
  "hide": {
   "pc": false,
-  "npc": false
+  "npc": true
  }
 }
