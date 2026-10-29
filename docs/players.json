@@ -1021,7 +1021,7 @@
   {
    "id": 625332348,
    "play": true,
-   "char": "Абиссия Мирал, Этия Зофис, Шейли Элесмора, Астерия Тэлл, Валирия Лилитур",
+   "char": "Абиссия Мирал, Этия Зофис, Шейли Элесмора, Астерия Тэлл, Валирия Лилитур, Новый персонаж",
    "name": "Шейли Элесмора",
    "photo": "https://sun1-17.vkuserphoto.ru/s/v1/ig2/CFP8gW0zXRMaSMT88ORsY-j6PP22f8LC2u4dWQFJS8Q3L_JGC3jB85ra5YOGLG2UDU1qJJU3zy4sBX-wJG6q8koA.jpg?quality=95&crop=25,176,493,493&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360,480x480&ava=1&cs=100x100",
    "role": "editor",
@@ -1051,6 +1051,10 @@
      "id": "cmvifyt3qydm",
      "name": "Валирия Лилитур",
      "fac": "shadows"
+    },
+    {
+     "id": "cmvu2qr2xo0d",
+     "name": "Новый персонаж"
     }
    ],
    "heir": 316981455
