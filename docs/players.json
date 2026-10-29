@@ -907,7 +907,11 @@
     },
     {
      "id": "cmvsi9qmsczh",
-     "name": "Вера Нортвудд"
+     "name": "Вера Нортвудд",
+     "facs": [
+      "bastards"
+     ],
+     "fac": "bastards"
     }
    ]
   },
