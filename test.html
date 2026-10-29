@@ -40,8 +40,9 @@ button { font: inherit; color: inherit; }
 @keyframes flick { 40% { opacity: .82; } 55% { opacity: 1; } 70% { opacity: .9; } }
 
 /* предметы */
-.obj { position: absolute; padding: 0; border: 0; background: none; cursor: pointer; transition: transform .35s cubic-bezier(.2,.7,.2,1), filter .35s; filter: drop-shadow(0 14px 14px rgba(0,0,0,.55)); }
-.obj:hover, .obj:focus-visible { transform: translateY(-8px) scale(1.03); filter: drop-shadow(0 18px 18px rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(255,214,140,.55)); outline: none; }
+.study-bg { background: #120c08 url(img/study-desk.webp) center / cover no-repeat; }
+.obj { position: absolute; padding: 0; border: 0; background: none; cursor: pointer; transform-origin: 50% 100%; transform: rotate(var(--rot, 0deg)) scale(var(--s, 1)); transition: transform .35s cubic-bezier(.2,.7,.2,1), filter .35s; filter: drop-shadow(0 14px 14px rgba(0,0,0,.55)); }
+.obj:hover, .obj:focus-visible { transform: translateY(-6px) rotate(var(--rot, 0deg)) scale(calc(var(--s, 1) * 1.06)); filter: drop-shadow(0 18px 18px rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(255,214,140,.55)); outline: none; }
 .ph { position: absolute; left: 8px; top: 6px; font: italic 12px Georgia; color: rgba(255,240,210,.55); letter-spacing: .04em; pointer-events: none; }
 
 /* том-заглушка: кожа, уголки, герб; лента и печать — у запечатанного */
@@ -133,9 +134,7 @@ button { font: inherit; color: inherit; }
 
   <!-- 1. Стол у окна -->
   <section class="room" data-i="0" aria-label="Стол у окна">
-    <div class="lay wall" style="--d:4"></div>
-    <div class="lay" style="--d:8"><div class="glare"></div><div class="window"><div class="sky" id="sky"><i class="moon" id="moon"></i><i class="hills"></i><i class="fog"></i></div><div class="mullion"></div></div></div>
-    <div class="lay" style="--d:16"><div class="candle-glow"></div><div class="desk"></div></div>
+    <div class="lay study-bg" style="--d:6"></div>
     <div class="lay" style="--d:26" id="desk-objs"></div>
   </section>
 
@@ -194,12 +193,11 @@ const saveSeen = () => { try { localStorage.setItem(LS, JSON.stringify(seen)); }
 const tomeHTML = (t, extra = "") => `<button type="button" class="obj tome${t.state === "ghost" ? " ghost" : ""}${t.state === "sealed" && seen[t.id] ? " untie" : ""}" data-tome="${t.id}" data-tip="${esc(t.n + " — " + t.t)}" style="--c1:${t.c1 || "#6b4123"};--c2:${t.c2 || "#3a2210"};${extra}">
   <i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i><span class="crest">${esc(t.crest)}</span><span class="ttl">${esc(t.t)}</span><span class="sub">${esc(t.n)}</span>${t.state === "sealed" ? `<i class="ribbon"></i><i class="seal"></i>` : ""}<span class="ph">заглушка</span></button>`;
 $("#desk-objs").innerHTML =
-  tomeHTML(TOMES[0], "left:520px;top:600px;transform:rotate(-4deg)") + tomeHTML(TOMES[1], "left:790px;top:590px;transform:rotate(2deg)") + tomeHTML(TOMES[2], "left:1060px;top:600px;transform:rotate(5deg)") +
-  `<button type="button" class="obj candle" data-tip="Свеча" style="left:370px;top:520px"><i></i><b></b></button>
-   <button type="button" class="obj letters" data-tip="Письма — ваши документы" data-act="letters" style="left:1330px;top:700px"><i></i><i></i><i></i><span class="ph">заглушка</span></button>
-   <button type="button" class="obj scroll" data-tip="Карта империи — открыть Атлас" data-act="map" style="left:640px;top:930px;transform:rotate(-3deg)"><span class="ph">заглушка</span></button>
-   <button type="button" class="obj deck" data-tip="Колода — к столу для карт" data-go="2" style="left:1640px;top:640px"><i></i><i></i><i></i></button>
-   <button type="button" class="obj inkwell" data-tip="Чернильница" style="left:1250px;top:560px"><i></i><b></b></button>`;
+  tomeHTML(TOMES[0], "left:520px;top:520px;--s:.34;--rot:-5deg") + tomeHTML(TOMES[1], "left:610px;top:520px;--s:.34;--rot:2deg") + tomeHTML(TOMES[2], "left:700px;top:520px;--s:.34;--rot:6deg") +
+  `   <button type="button" class="obj letters" data-tip="Письма — ваши документы" data-act="letters" style="left:800px;top:650px;--s:.42;--rot:4deg"><i></i><i></i><i></i><span class="ph">заглушка</span></button>
+   <button type="button" class="obj scroll" data-tip="Карта империи — открыть Атлас" data-act="map" style="left:960px;top:720px;--s:.42;--rot:-6deg"><span class="ph">заглушка</span></button>
+   <button type="button" class="obj deck" data-tip="Колода — к столу для карт" data-go="2" style="left:1150px;top:560px;--s:.42;--rot:8deg"><i></i><i></i><i></i></button>
+   <button type="button" class="obj inkwell" data-tip="Чернильница" style="left:1050px;top:590px;--s:.55"><i></i><b></b></button>`;
 const spineCols = ["#6b4123", "#4e2e14", "#5a1f1a", "#2f3a2a", "#3c2c4a", "#6a5630", "#2b3442"];
 $("#case").innerHTML = [0, 1, 2].map(r => `<div class="shelf">${Array.from({ length: 14 }, (_, k) => {
   const t = r === 0 && k < TOMES.length ? TOMES[k] : null, h = 180 + ((r * 7 + k * 13) % 70), w = 46 + ((k * 11 + r * 5) % 30);
@@ -283,6 +281,7 @@ addEventListener("keydown", e => {
 
 /* ---------- окно: время суток по часам ---------- */
 function skyDraw() {
+  if (!$("#sky")) return;
   const h = new Date().getHours() + new Date().getMinutes() / 60;
   const night = h < 5.5 || h >= 21, dawn = h >= 5.5 && h < 8, dusk = h >= 18 && h < 21;
   $("#sky").style.background = night ? "linear-gradient(180deg, #050a1c, #13244d 60%, #1d3463)" : dawn ? "linear-gradient(180deg, #2a3a6a, #b86a5a 60%, #f0b27a)" : dusk ? "linear-gradient(180deg, #1c2550, #7a4a6a 55%, #e08a5a)" : "linear-gradient(180deg, #6a8cc0, #a9c3de 60%, #d9e3ea)";
