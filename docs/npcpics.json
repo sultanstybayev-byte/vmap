@@ -1,12 +1,4 @@
 {
- "olivia": {
-  "img": "npc/olivia-1.webp",
-  "crop": {
-   "l": -2.91,
-   "t": 0,
-   "w": 270.9
-  }
- },
  "silvana": {
   "img": "npc/silvana-2.webp",
   "crop": {
