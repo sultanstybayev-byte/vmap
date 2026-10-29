@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тестовая страница — Империя Веларис</title>
+<style>
+:root { color-scheme: dark; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; box-sizing: border-box; background: #120c07; color: #f0e2c0; font: 17px/1.5 Georgia, serif; }
+main { width: min(560px, 100%); padding: 26px 22px; border: 1px solid #c9a25a; border-radius: 10px; background: #241710; text-align: center; }
+h1 { margin: 0 0 8px; font-size: 26px; color: #f0d696; } p { margin: 8px 0; color: #d9c8a4; }
+.b { display: inline-block; margin: 14px 6px 0; padding: 11px 18px; border: 1px solid #c9a25a; border-radius: 4px; background: #3a2414; color: #f6e2a8; text-decoration: none; font-weight: 700; }
+code { font-size: 14px; color: #c9b88f; word-break: break-all; }
+</style></head><body><main>
+<h1>Тестовая страница</h1>
+<p>Если вы видите это внутри приложения ВК — переход на свою страницу сайта открывается прямо в приложении, без отдельного браузера.</p>
+<p>Адрес: <code id="u"></code></p>
+<p id="vk"></p>
+<a class="b" id="back" href="index.html">← Вернуться в главное меню</a>
+</main>
+<script>
+const q = location.search; document.getElementById("u").textContent = location.href;
+document.getElementById("back").href = "index.html" + q;
+document.getElementById("vk").textContent = /vk_user_id=/.test(q) ? "Параметры ВК дошли — сайт знает, кто вы." : "Параметров ВК нет — страница открыта вне приложения.";
+</script></body></html>
