@@ -22,7 +22,7 @@
   }
  ],
  "hide": {
-  "pc": false,
+  "pc": true,
   "npc": true
  }
 }
