@@ -22,18 +22,7 @@
   },
   {
    "no": 6,
-   "kind": "kniga",
-   "title": "Солнцецвет и полезные истории",
-   "note": "",
-   "vis": "to",
-   "public": false,
-   "to": [
-    749276044,
-    1120771500
-   ],
-   "created": "25 октября 2026 г.",
-   "updated": "25 октября 2026 г.",
-   "folder": "f-knigi"
+   "deleted": true
   },
   {
    "no": 7,
