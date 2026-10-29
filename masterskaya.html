@@ -3459,7 +3459,7 @@ let GA = { fameHidden: null, list: [], hide: { pc: false, npc: false }, players:
 const gaToday = () => { const d = new Date(); return `${d.getDate()} ${["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"][d.getMonth()]}`; };
 const gaBlank = () => ({ kind: "pc", who: "", npc: "", n: "", cause: "", date: gaToday(), ep: "", killers: [], pts: 1 });
 function graveAdminHTML() {
-  return `<div class="va ga wide"><p class="lw-lead">Павшие персонажи и NPC. Похороненный персонаж исчезает у игрока: его нельзя выбрать в квесте, в сумке и во фракции. На сайте (главное меню → Кладбище) он стоит надгробием с причиной смерти. Отмеченные убийцы получают очки в Зале славы.</p><div id="ga-box"><p class="note">Загружаю кладбище…</p></div></div>`;
+  return `<div class="va ga wide"><p class="lw-lead">Павшие персонажи и NPC. Похороненный персонаж исчезает у игрока: его нельзя выбрать в квесте, в сумке и во фракции. На сайте (главное меню → Посмертный архив) у него свой ящик с делом и причиной смерти. Отмеченные убийцы получают очки в Зале славы.</p><div id="ga-box"><p class="note">Открываю архив…</p></div></div>`;
 }
 async function graveAdminInit() {
   try { const [G, P] = await Promise.all([grLoad(!!ghCfg().token), plLoad(!!ghCfg().token)]); GA.list = G.list; GA.hide = G.hide; GA.players = P.list || []; GA.loaded = true; } catch (e) { toast("Не получилось загрузить: " + e.message); }
@@ -3474,7 +3474,7 @@ function gaDraw() {
   if (GA.form) return gaDrawForm();
   const pc = GA.list.map((g, i) => [g, i]).filter(([g]) => g.kind === "pc"), npc = GA.list.map((g, i) => [g, i]).filter(([g]) => g.kind !== "pc");
   const vis = (k, l) => `<label class="ga-vis"><input type="checkbox" data-gavis="${k}"${GA.hide[k] ? "" : " checked"}> <span>${l}</span><small>${GA.hide[k] ? "скрыто от игроков" : "видят все"}</small></label>`;
-  box.innerHTML = `<div class="ga-visbox"><b>Кто видит кладбище</b>${vis("pc", "Кладбище героев")}${vis("npc", "Кладбище NPC")}<label class="ga-vis"><input type="checkbox" data-gafame${GA.fameHidden === null ? " disabled" : GA.fameHidden ? "" : " checked"}> <span>Зал славы</span><small>${GA.fameHidden === null ? "загружаю…" : GA.fameHidden ? "скрыт от игроков" : "видят все"}</small></label><p class="note">Скрытое видит только мастер. Если скрыты оба кладбища — плитка «Кладбище» пропадает у игроков.</p></div>
+  box.innerHTML = `<div class="ga-visbox"><b>Кто видит Посмертный архив</b>${vis("pc", "Дела героев")}${vis("npc", "Дела NPC")}<label class="ga-vis"><input type="checkbox" data-gafame${GA.fameHidden === null ? " disabled" : GA.fameHidden ? "" : " checked"}> <span>Зал славы</span><small>${GA.fameHidden === null ? "загружаю…" : GA.fameHidden ? "скрыт от игроков" : "видят все"}</small></label><p class="note">Скрытое видит только мастер. Если скрыты оба раздела — плитка «Посмертный архив» пропадает у игроков.</p></div>
     <div class="actions"><button type="button" class="btn" data-ganew>✝ Похоронить</button></div>
     <h3>Персонажи игроков · ${pc.length}</h3>${pc.length ? `<div class="va-list">${pc.map(([g, i]) => gaRow(g, i)).join("")}</div>` : `<p class="note">Пока никто не пал.</p>`}
     <h3>NPC · ${npc.length}</h3>${npc.length ? `<div class="va-list">${npc.map(([g, i]) => gaRow(g, i)).join("")}</div>` : `<p class="note">Пока никто не пал.</p>`}`;
@@ -4175,7 +4175,7 @@ document.addEventListener("click", async e => {
 document.addEventListener("input", e => { const t = e.target; if (!AA.form || !t.matches || !t.matches("[data-aasc]")) return; AA.form.icScale = icSizeVal(t); const pv = document.querySelector(".aa-pv"); if (pv) pv.innerHTML = achBadgeSVG(AA.form); });
 
 /* ---------- Мастерская: Записи смертей ----------
-   Летопись: кто кого убил и как — в квесте или в странствиях. Это не кладбище: персонаж игрока остаётся у игрока,
+   Летопись: кто кого убил и как — в квесте или в странствиях. Это не архив: персонаж игрока остаётся у игрока,
    похоронить можно галочкой «Похоронить» или во вкладке «Кладбище». Убийства из записей идут в «Кровавый счёт» Зала славы. */
 let DA = { list: [], players: [], qs: {}, npcs: [], form: null, busy: false, q: "", delAsk: false };
 const daToday = () => { const d = new Date(); return `${d.getDate()} ${["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"][d.getMonth()]}`; };
@@ -4183,7 +4183,7 @@ const daBlank = () => ({ id: "d" + Date.now().toString(36), kind: "npc", ref: ""
 const daQuests = () => [...new Set(QUESTS.map(q => q.n).concat(Object.keys(DA.qs || {})))].filter(Boolean).sort((a, b) => a.localeCompare(b, "ru"));
 const daPlayer = id => DA.players.find(p => +p.id === +id);
 function deathAdminHTML() {
-  return `<div class="va da wide"><p class="lw-lead">Книга павших: летопись того, кто кого убил и как — во время квеста или в странствиях. Отметьте «Похоронить», чтобы павший сразу лёг на кладбище (вкладка «Кладбище» выше). Убийства засчитываются в «Кровавый счёт» Зала славы.</p><div id="da-box"><p class="note">Открываю летопись…</p></div></div>`;
+  return `<div class="va da wide"><p class="lw-lead">Книга павших: летопись того, кто кого убил и как — во время квеста или в странствиях. Отметьте «Похоронить», чтобы павший сразу лёг в Посмертный архив (вкладка «Посмертный архив» выше). Убийства засчитываются в «Кровавый счёт» Зала славы.</p><div id="da-box"><p class="note">Открываю летопись…</p></div></div>`;
 }
 async function deathAdminInit() {
   const fr = !!ghCfg().token;
@@ -4221,7 +4221,7 @@ function daDrawForm() {
     <div class="va-grid wa-grid">${fld("date", "Когда", "23 октября")}<label class="va-f"><span>Очки за убийство</span><input type="number" class="da-pts" min="1" max="50" data-daf="pts" value="${+f.pts || 1}"></label></div>
     <div class="ga-kill"><span class="ga-kl">Кто убил</span><div class="ga-kchips">${DA.players.filter(p => plays(p) || (f.killers || []).includes(p.id)).sort((a, b) => String(a.name).localeCompare(String(b.name), "ru")).map(p => `<button type="button" data-dakill="${p.id}" aria-pressed="${(f.killers || []).includes(p.id)}">${esc(p.name)}</button>`).join("")}</div>
       <small class="note">Отметьте игроков, чьи персонажи убили. Никого — если погиб не от рук игроков.</small></div>
-    <label class="lw-chk"><input type="checkbox" data-dafame${f.fame !== false ? " checked" : ""}> Засчитать убийство в «Кровавый счёт» Зала славы</label>${edit || f.kind === "other" ? "" : `<label class="lw-chk"><input type="checkbox" data-dabury${f.bury ? " checked" : ""}> Похоронить на кладбище${f.kind === "pc" ? " — персонаж уйдёт у игрока" : ""}</label>`}
+    <label class="lw-chk"><input type="checkbox" data-dafame${f.fame !== false ? " checked" : ""}> Засчитать убийство в «Кровавый счёт» Зала славы</label>${edit || f.kind === "other" ? "" : `<label class="lw-chk"><input type="checkbox" data-dabury${f.bury ? " checked" : ""}> Похоронить — завести дело в Посмертном архиве${f.kind === "pc" ? " — персонаж уйдёт у игрока" : ""}</label>`}
     <div class="actions va-save"><button type="button" class="btn" data-dasave ${DA.busy ? "disabled" : ""}>${DA.busy ? "Сохраняю…" : "Сохранить запись"}</button><button type="button" class="btn ghost" data-dacancel>Отмена</button>${edit ? `<button type="button" class="btn ghost" data-dadel>${DA.delAsk ? "Точно удалить?" : "Удалить запись"}</button>` : ""}</div></div>`;
 }
 document.addEventListener("input", e => {
@@ -4279,7 +4279,7 @@ const TOOLS = [
   ["znaki", "Знаки фракций", facStyleHTML, fsInit],
   ["frakcii", "Фракции", factionsAdminHTML, faInit],
   ["igroki", "Игроки", playersHTML, playersInit],
-  ["kladbishche", "Кладбище", graveAdminHTML, graveAdminInit],
+  ["kladbishche", "Посмертный архив", graveAdminHTML, graveAdminInit],
   ["sudba", "Карты Судьбы", fateAdminHTML, fateAdminInit],
   ["geroi", "Колода сердец", heroAdminHTML, heroAdminInit],
   ["npc", "Перечень NPC", npcAdminHTML, npcAdminInit],
@@ -4307,7 +4307,7 @@ const WS_MENU = [
     ["frak", "Фракции", "Описания, участники и знаки", ["frakcii", "znaki"]],
     ["igroki", "Игроки", "Персонажи и сумки", ["igroki"]],
     ["geroi", "Колода сердец", "Карты персонажей игроков", ["geroi"]],
-    ["smerti", "Книга павших", "Кто кого убил, летопись и кладбище", ["smerti", "kladbishche"]],
+    ["smerti", "Книга павших", "Кто кого убил, летопись и посмертный архив", ["smerti", "kladbishche"]],
     ["npc", "Перечень NPC", "Все NPC: анкеты, портреты, новые", ["npc"]]
   ]],
   ["Инвентарь", [
@@ -4316,7 +4316,7 @@ const WS_MENU = [
     ["slava", "Достижения", "Личные знаки отличия игроков", ["dostizheniya"]]
   ]]
 ];
-const WS_TAB = { kvesty: "Квесты", rozysk: "Розыск", frakcii: "Фракции", znaki: "Знаки фракций", igroki: "Игроки", kladbishche: "Кладбище", smerti: "Летопись" };
+const WS_TAB = { kvesty: "Квесты", rozysk: "Розыск", frakcii: "Фракции", znaki: "Знаки фракций", igroki: "Игроки", kladbishche: "Посмертный архив", smerti: "Летопись" };
 const WS_IC = Object.assign({}, RAIL_IC, {
   doska: '<path d="M6 3h12v18H6z"/><circle cx="12" cy="3.5" r="1.2"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
   kvesty: '<path d="M6 3h12v18H6z"/><circle cx="12" cy="3.5" r="1.2"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
