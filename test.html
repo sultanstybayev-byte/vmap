@@ -1,25 +1,297 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Тестовая страница — Империя Веларис</title>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Кабинет исследователя — Империя Веларис</title>
 <style>
-:root { color-scheme: dark; }
-body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; box-sizing: border-box; background: #120c07; color: #f0e2c0; font: 17px/1.5 Georgia, serif; }
-main { width: min(560px, 100%); padding: 26px 22px; border: 1px solid #c9a25a; border-radius: 10px; background: #241710; text-align: center; }
-h1 { margin: 0 0 8px; font-size: 26px; color: #f0d696; } p { margin: 8px 0; color: #d9c8a4; }
-.b { display: inline-block; margin: 14px 6px 0; padding: 11px 18px; border: 1px solid #c9a25a; border-radius: 4px; background: #3a2414; color: #f6e2a8; text-decoration: none; font-weight: 700; }
-code { font-size: 14px; color: #c9b88f; word-break: break-all; }
-</style></head><body><main>
-<h1>Тестовая страница</h1>
-<p id="where"></p>
-<p>Адрес: <code id="u"></code></p>
-<p id="vk"></p>
-<a class="b" id="back" href="index.html">← Вернуться в главное меню</a>
-</main>
+/* =====================================================================
+   КАБИНЕТ ИССЛЕДОВАТЕЛЯ — рабочий скелет.
+   Все рисунки — заглушки. Позже каждый слой (.lay) и предмет (.obj) получит
+   свою картинку из нейросети: достаточно задать background-image.
+   ===================================================================== */
+:root { --gold: #c9a25a; --gold-hi: #f0d696; --ink: #2a1a0c; --mx: 0; --my: 0; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0c0805; color: #f0e2c0; font: 17px/1.5 Georgia, "Times New Roman", serif; }
+button { font: inherit; color: inherit; }
+
+/* сцена: «мир» из трёх комнат в ряд, камера двигает и масштабирует мир */
+#view { position: fixed; inset: 0; overflow: hidden; }
+#world { position: absolute; left: 0; top: 0; width: 5760px; height: 1080px; transform-origin: 0 0; will-change: transform; }
+.room { position: absolute; top: 0; width: 1920px; height: 1080px; overflow: hidden; }
+.room[data-i="0"] { left: 0; } .room[data-i="1"] { left: 1920px; } .room[data-i="2"] { left: 3840px; }
+.lay { position: absolute; inset: -60px; transform: translate(calc(var(--mx) * var(--d, 0) * 1px), calc(var(--my) * var(--d, 0) * 1px)); transition: transform .5s cubic-bezier(.2,.7,.2,1); pointer-events: none; }
+.lay > * { pointer-events: auto; }
+
+/* --- комната 1: стол у окна --- */
+.wall { background: radial-gradient(ellipse 60% 50% at 50% 38%, #4a3220 0%, #2c1c11 55%, #160d07 100%); }
+.wall::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 140px); }
+.window { position: absolute; left: 50%; top: 110px; width: 760px; height: 640px; margin-left: -380px; border-radius: 380px 380px 10px 10px; overflow: hidden; box-shadow: 0 0 0 22px #24160c, 0 0 0 26px #120a05, 0 30px 80px rgba(0,0,0,.6); }
+.sky { position: absolute; inset: 0; transition: background 2s; }
+.sky .moon { position: absolute; top: 120px; right: 150px; width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 38% 38%, #fbf3d8, #d9cfa9 70%); box-shadow: 0 0 60px 20px rgba(240,230,190,.25); transition: opacity 2s; }
+.sky .hills { position: absolute; left: -10%; right: -10%; bottom: 0; height: 200px; background: radial-gradient(ellipse 40% 100% at 25% 100%, #1b1f2c 60%, transparent 61%), radial-gradient(ellipse 50% 90% at 75% 100%, #151925 60%, transparent 61%); }
+.sky .fog { position: absolute; left: -20%; right: -20%; bottom: 40px; height: 160px; background: radial-gradient(ellipse 30% 50% at 30% 60%, rgba(200,210,225,.22), transparent 70%), radial-gradient(ellipse 30% 50% at 70% 50%, rgba(200,210,225,.18), transparent 70%); animation: fog 30s ease-in-out infinite alternate; }
+@keyframes fog { to { transform: translateX(8%); } }
+.mullion { position: absolute; inset: 0; background: linear-gradient(90deg, transparent calc(50% - 7px), #1c1109 calc(50% - 7px) calc(50% + 7px), transparent calc(50% + 7px)), linear-gradient(0deg, transparent 54%, #1c1109 54% calc(54% + 12px), transparent calc(54% + 12px)), repeating-linear-gradient(90deg, transparent 0 94px, rgba(20,12,6,.55) 94px 97px), repeating-linear-gradient(0deg, transparent 0 94px, rgba(20,12,6,.55) 94px 97px); }
+.glare { position: absolute; left: 50%; top: 110px; width: 1200px; height: 900px; margin-left: -600px; background: radial-gradient(ellipse 45% 55% at 50% 40%, rgba(180,200,240,.14), transparent 70%); }
+.desk { position: absolute; left: -80px; right: -80px; bottom: 0; height: 430px; background: linear-gradient(180deg, #5a3a22 0%, #3d2614 22%, #24160b 100%); clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%); box-shadow: inset 0 18px 30px rgba(255,200,140,.08); }
+.desk::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(92deg, rgba(0,0,0,.12) 0 3px, transparent 3px 46px); }
+.candle-glow { position: absolute; left: 250px; bottom: 260px; width: 700px; height: 500px; background: radial-gradient(ellipse at 50% 70%, rgba(255,180,90,.22), transparent 65%); animation: flick 3.2s ease-in-out infinite; }
+@keyframes flick { 40% { opacity: .82; } 55% { opacity: 1; } 70% { opacity: .9; } }
+
+/* предметы */
+.obj { position: absolute; padding: 0; border: 0; background: none; cursor: pointer; transition: transform .35s cubic-bezier(.2,.7,.2,1), filter .35s; filter: drop-shadow(0 14px 14px rgba(0,0,0,.55)); }
+.obj:hover, .obj:focus-visible { transform: translateY(-8px) scale(1.03); filter: drop-shadow(0 18px 18px rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(255,214,140,.55)); outline: none; }
+.ph { position: absolute; left: 8px; top: 6px; font: italic 12px Georgia; color: rgba(255,240,210,.55); letter-spacing: .04em; pointer-events: none; }
+
+/* том-заглушка: кожа, уголки, герб; лента и печать — у запечатанного */
+.tome { width: 230px; height: 300px; border-radius: 6px 10px 10px 6px; background: linear-gradient(135deg, var(--c1, #8a5a2c), var(--c2, #5a3518)); box-shadow: inset 10px 0 0 rgba(0,0,0,.25), inset 0 0 0 10px rgba(0,0,0,.12), inset 0 0 0 12px rgba(240,200,120,.35); }
+.tome .crest { position: absolute; left: 50%; top: 58px; width: 84px; height: 84px; margin-left: -42px; border-radius: 50%; border: 3px solid rgba(240,210,140,.75); display: grid; place-items: center; font: 700 36px Georgia; color: rgba(240,210,140,.85); }
+.tome .ttl { position: absolute; left: 22px; right: 22px; top: 160px; text-align: center; font: 700 19px/1.2 Georgia; color: #f3dfae; text-shadow: 0 1px 2px #000; }
+.tome .sub { position: absolute; left: 22px; right: 22px; top: 222px; text-align: center; font: italic 14px Georgia; color: rgba(243,223,174,.75); }
+.tome .corner { position: absolute; width: 26px; height: 26px; border: 3px solid rgba(240,200,120,.7); }
+.tome .c1 { left: 14px; top: 14px; border-right: 0; border-bottom: 0; } .tome .c2 { right: 14px; top: 14px; border-left: 0; border-bottom: 0; } .tome .c3 { left: 14px; bottom: 14px; border-right: 0; border-top: 0; } .tome .c4 { right: 14px; bottom: 14px; border-left: 0; border-top: 0; }
+.tome .ribbon { position: absolute; left: -10px; right: -10px; top: 128px; height: 50px; background: linear-gradient(180deg, #efe4c8, #d8c9a2); box-shadow: 0 3px 6px rgba(0,0,0,.4); transition: transform .7s cubic-bezier(.5,0,.2,1), opacity .7s; }
+.tome .seal { position: absolute; left: 50%; top: 124px; width: 58px; height: 58px; margin-left: -29px; border-radius: 50%; background: radial-gradient(circle at 38% 34%, #d0493a, #7d1a12 72%); box-shadow: 0 3px 6px rgba(0,0,0,.5), inset 0 0 0 4px rgba(0,0,0,.18); transition: transform .5s, opacity .5s; }
+.tome.untie .ribbon { transform: translateX(120%) rotate(8deg); opacity: 0; } .tome.untie .seal { transform: scale(.4) rotate(-40deg); opacity: 0; }
+.tome.ghost { background: none; box-shadow: none; border: 2px dashed rgba(240,210,140,.6); cursor: default; filter: none; }
+.tome.ghost .ttl { color: rgba(240,210,140,.7); } .tome.ghost:hover { transform: none; filter: none; }
+
+.candle { width: 60px; height: 180px; } .candle i { position: absolute; left: 14px; bottom: 0; width: 32px; height: 130px; border-radius: 4px; background: linear-gradient(90deg, #e9dcc0, #fbf3dd 40%, #cbbd9c); } .candle b { position: absolute; left: 22px; bottom: 128px; width: 16px; height: 34px; border-radius: 50% 50% 40% 40%; background: radial-gradient(ellipse at 50% 70%, #fff4c2, #ffb347 55%, rgba(255,120,40,0) 75%); animation: flame 1.6s ease-in-out infinite alternate; }
+@keyframes flame { to { transform: scaleY(1.12) translateX(1px); } }
+.letters { width: 260px; height: 150px; } .letters i { position: absolute; width: 220px; height: 130px; border-radius: 3px; background: linear-gradient(160deg, #efe1bf, #d6c294); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+.letters i:nth-child(1) { left: 0; top: 14px; transform: rotate(-6deg); } .letters i:nth-child(2) { left: 22px; top: 6px; transform: rotate(4deg); } .letters i:nth-child(3) { left: 34px; top: 18px; } .letters i:nth-child(3)::after { content: ""; position: absolute; left: 50%; top: 46px; width: 34px; height: 34px; margin-left: -17px; border-radius: 50%; background: radial-gradient(circle at 38% 34%, #d0493a, #7d1a12 72%); }
+.scroll { width: 300px; height: 70px; border-radius: 35px; background: linear-gradient(180deg, #e8d7ae, #c7b07c 60%, #a98f5a); box-shadow: inset -30px 0 30px rgba(0,0,0,.2); }
+.deck { width: 150px; height: 210px; } .deck i { position: absolute; inset: 0; border-radius: 10px; background: linear-gradient(135deg, #3a1d14, #1c0d08); box-shadow: inset 0 0 0 6px #b48a44, inset 0 0 0 8px #3a2410, 0 2px 4px rgba(0,0,0,.5); }
+.deck i:nth-child(1) { transform: translate(-6px, 4px) rotate(-5deg); } .deck i:nth-child(2) { transform: translate(-3px, 2px) rotate(-2deg); } .deck i:nth-child(3)::after { content: "✦"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 46px; color: #c9a25a; }
+.inkwell { width: 90px; height: 120px; } .inkwell i { position: absolute; left: 10px; bottom: 0; width: 70px; height: 56px; border-radius: 12px 12px 18px 18px; background: linear-gradient(90deg, #11161e, #2a3442 45%, #0b0f15); } .inkwell b { position: absolute; left: 44px; bottom: 40px; width: 6px; height: 120px; transform: rotate(22deg); transform-origin: bottom; border-radius: 3px; background: linear-gradient(180deg, #f1e8d6, #b9a888); }
+
+/* --- комната 2: книжный шкаф --- */
+.shelfwall { background: radial-gradient(ellipse 70% 60% at 50% 40%, #3b2616, #150d07 85%); }
+.case { position: absolute; left: 260px; right: 260px; top: 80px; bottom: 80px; border: 24px solid #2a190d; border-radius: 8px; background: linear-gradient(180deg, #1b110a, #120b06); box-shadow: 0 30px 80px rgba(0,0,0,.7), inset 0 0 60px rgba(0,0,0,.7); display: grid; grid-template-rows: repeat(3, 1fr); }
+.shelf { position: relative; display: flex; align-items: flex-end; gap: 10px; padding: 0 40px 16px; border-bottom: 18px solid #3a2413; }
+.spine { position: relative; width: var(--w, 64px); height: var(--h, 240px); border-radius: 4px 4px 2px 2px; background: linear-gradient(90deg, rgba(0,0,0,.35), transparent 30%, rgba(255,255,255,.06) 50%, rgba(0,0,0,.3)), var(--c, #6b4123); box-shadow: inset 0 14px 0 rgba(240,200,120,.25), inset 0 -14px 0 rgba(240,200,120,.25); }
+.spine.deco { cursor: default; filter: brightness(.7); } .spine.deco:hover { transform: none; filter: brightness(.7); }
+.spine span { position: absolute; left: 50%; top: 50%; width: 200px; transform: translate(-50%, -50%) rotate(-90deg); text-align: center; font: 700 15px Georgia; color: #f3dfae; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+
+/* --- комната 3: стол для карт --- */
+.felt { background: radial-gradient(ellipse 60% 55% at 50% 55%, #2e4a33, #172719 70%, #0c140d); }
+.felt::after { content: ""; position: absolute; left: 12%; right: 12%; top: 16%; bottom: 14%; border-radius: 50% / 40%; box-shadow: inset 0 0 0 14px #3a2413, inset 0 0 0 16px #c9a25a, inset 0 0 120px rgba(0,0,0,.6); }
+.hand { position: absolute; left: 50%; bottom: 300px; display: flex; gap: 0; transform: translateX(-50%); }
+.card { position: relative; width: 170px; height: 250px; margin: 0 -18px; border-radius: 12px; background: linear-gradient(160deg, #e9dcbc, #cdb88a); box-shadow: inset 0 0 0 5px var(--rar, #8a6a3a), inset 0 0 0 7px #2a1a0c, 0 10px 18px rgba(0,0,0,.55); transform: rotate(var(--r)) translateY(var(--y)); transform-origin: 50% 120%; transition: transform .35s cubic-bezier(.2,.7,.2,1); cursor: pointer; color: var(--ink); }
+.card:hover { transform: rotate(0) translateY(-40px) scale(1.08); z-index: 5; }
+.card .art { position: absolute; left: 14px; right: 14px; top: 34px; height: 110px; border-radius: 6px; background: repeating-linear-gradient(45deg, rgba(0,0,0,.08) 0 8px, rgba(0,0,0,.02) 8px 16px); display: grid; place-items: center; font: italic 12px Georgia; color: rgba(42,26,12,.6); }
+.card .pw { position: absolute; left: -6px; top: -6px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 38% 34%, #f3dfae, #b48a44); box-shadow: 0 0 0 3px #2a1a0c; font: 700 19px Georgia; }
+.card .row { position: absolute; right: 10px; top: 8px; font-size: 13px; opacity: .75; }
+.card .nm { position: absolute; left: 12px; right: 12px; top: 150px; text-align: center; font: 700 15px/1.15 Georgia; }
+.card .tp { position: absolute; left: 12px; right: 12px; top: 192px; text-align: center; font: italic 12px/1.25 Georgia; opacity: .75; }
+.soon { position: absolute; left: 0; right: 0; top: 230px; text-align: center; font: 700 44px Georgia; letter-spacing: .1em; color: rgba(240,214,150,.85); text-shadow: 0 4px 18px #000; }
+.soon small { display: block; font: italic 400 19px Georgia; letter-spacing: 0; color: rgba(240,226,192,.75); }
+
+/* интерфейс поверх сцены */
+.ui { position: fixed; z-index: 20; }
+#nav { left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; gap: 8px; padding: 6px; border-radius: 999px; background: rgba(12,8,5,.55); backdrop-filter: blur(6px); border: 1px solid rgba(201,162,90,.4); }
+#nav button { padding: 8px 18px; border: 0; border-radius: 999px; background: none; cursor: pointer; font: 700 15px Georgia; letter-spacing: .04em; color: #d9c8a4; transition: background .3s, color .3s; }
+#nav button[aria-pressed="true"] { background: linear-gradient(180deg, #e6c47c, #b48a44); color: #2a1a0c; }
+.arrow { top: 50%; width: 54px; height: 90px; margin-top: -45px; border: 1px solid rgba(201,162,90,.4); border-radius: 10px; background: rgba(12,8,5,.4); cursor: pointer; font-size: 30px; color: var(--gold-hi); transition: opacity .3s, background .3s; }
+.arrow:hover { background: rgba(30,20,10,.75); } .arrow[disabled] { opacity: 0; pointer-events: none; }
+#prev { left: 18px; } #next { right: 18px; }
+#close { left: 18px; top: 16px; padding: 8px 14px; border: 1px solid rgba(201,162,90,.5); border-radius: 6px; background: rgba(12,8,5,.55); cursor: pointer; font: 700 14px Georgia; color: var(--gold-hi); }
+#title { left: 50%; top: 16px; transform: translateX(-50%); font: 700 15px Georgia; letter-spacing: .2em; text-transform: uppercase; color: rgba(240,214,150,.85); text-shadow: 0 2px 8px #000; pointer-events: none; }
+#tip { position: fixed; z-index: 30; padding: 5px 12px; border-radius: 4px; border: 1px solid var(--gold); background: rgba(30,20,10,.92); font: 700 14px Georgia; color: var(--gold-hi); pointer-events: none; opacity: 0; transform: translate(-50%, -140%); transition: opacity .2s; white-space: nowrap; }
+#tip.on { opacity: 1; }
+#veil { position: fixed; inset: 0; z-index: 15; background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.65)); pointer-events: none; }
+
+/* читалка тома */
+#reader { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(6,4,2,.82); opacity: 0; visibility: hidden; transition: opacity .45s, visibility 0s .45s; }
+#reader.on { opacity: 1; visibility: visible; transition: opacity .45s, visibility 0s; }
+.book { position: relative; width: min(1050px, 88vw, calc((100vh - 190px) * 1.55)); aspect-ratio: 1.55; margin-bottom: 40px; perspective: 2400px; transform: scale(.9); transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+#reader.on .book { transform: none; }
+.page { position: absolute; top: 0; bottom: 0; width: 50%; padding: 6% 6% 7%; background: linear-gradient(90deg, #e7d8b4, #f3e8cc 30%, #efe2c0); color: var(--ink); overflow: hidden; }
+.page.l { left: 0; border-radius: 8px 0 0 8px; box-shadow: inset -30px 0 40px -20px rgba(80,50,20,.45); }
+.page.r { right: 0; border-radius: 0 8px 8px 0; box-shadow: inset 30px 0 40px -20px rgba(80,50,20,.45); }
+.page h2 { margin: 0 0 6px; font: 700 clamp(20px, 2.2vw, 30px)/1.15 Georgia; } .page h3 { margin: 0 0 14px; font: italic 400 clamp(14px, 1.3vw, 17px) Georgia; color: #7a5a30; }
+.page p { margin: 0 0 .7em; font-size: clamp(14px, 1.25vw, 17px); text-align: justify; } .page .pn { position: absolute; bottom: 4%; left: 0; right: 0; text-align: center; font: italic 13px Georgia; color: #8a6a44; }
+.leaf { position: absolute; top: 0; bottom: 0; left: 50%; width: 50%; transform-origin: 0 50%; transform-style: preserve-3d; transition: transform .8s cubic-bezier(.45,.05,.2,1); }
+.leaf > div { position: absolute; inset: 0; backface-visibility: hidden; background: linear-gradient(90deg, #efe2c0, #f3e8cc 70%, #e7d8b4); border-radius: 0 8px 8px 0; }
+.leaf > .back { transform: rotateY(180deg); border-radius: 8px 0 0 8px; }
+.leaf.turn { transform: rotateY(-180deg); }
+.leaf.turnback { transform: rotateY(0); transition: none; }
+.book .cover-shadow { position: absolute; inset: -14px; z-index: -1; border-radius: 14px; background: linear-gradient(135deg, var(--c1, #6b4123), var(--c2, #3a2210)); box-shadow: 0 40px 80px rgba(0,0,0,.7); }
+.rnav { position: absolute; bottom: -62px; left: 0; right: 0; display: flex; justify-content: center; gap: 14px; align-items: center; color: #d9c8a4; font: italic 15px Georgia; }
+.rnav button { width: 46px; height: 46px; border: 1px solid var(--gold); border-radius: 50%; background: rgba(30,20,10,.8); cursor: pointer; font-size: 22px; color: var(--gold-hi); } .rnav button[disabled] { opacity: .3; cursor: default; }
+.rclose { position: absolute; right: -14px; top: -58px; width: 44px; height: 44px; border: 1px solid var(--gold); border-radius: 50%; background: rgba(30,20,10,.85); cursor: pointer; font-size: 20px; color: var(--gold-hi); }
+
+/* узкий экран */
+#narrow { display: none; }
+@media (max-width: 760px) { #narrow { display: grid; position: fixed; inset: 0; z-index: 60; place-items: center; padding: 30px; background: #120c07; text-align: center; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="view"><div id="world">
+
+  <!-- 1. Стол у окна -->
+  <section class="room" data-i="0" aria-label="Стол у окна">
+    <div class="lay wall" style="--d:4"></div>
+    <div class="lay" style="--d:8"><div class="glare"></div><div class="window"><div class="sky" id="sky"><i class="moon" id="moon"></i><i class="hills"></i><i class="fog"></i></div><div class="mullion"></div></div></div>
+    <div class="lay" style="--d:16"><div class="candle-glow"></div><div class="desk"></div></div>
+    <div class="lay" style="--d:26" id="desk-objs"></div>
+  </section>
+
+  <!-- 2. Книжный шкаф -->
+  <section class="room" data-i="1" aria-label="Книжный шкаф">
+    <div class="lay shelfwall" style="--d:4"></div>
+    <div class="lay" style="--d:14"><div class="case" id="case"></div></div>
+  </section>
+
+  <!-- 3. Стол для карт -->
+  <section class="room" data-i="2" aria-label="Стол для карт">
+    <div class="lay felt" style="--d:6"></div>
+    <div class="lay" style="--d:14"><div class="soon">Карточная игра<small>Скелет карт: классы, типы и особые карты — рисунки добавим позже</small></div></div>
+    <div class="lay" style="--d:24"><div class="hand" id="hand"></div></div>
+  </section>
+
+</div></div>
+<div id="veil"></div>
+<button class="ui" id="close" type="button">✕ Закрыть кабинет</button>
+<div class="ui" id="title">Кабинет исследователя</div>
+<button class="ui arrow" id="prev" type="button" aria-label="Предыдущий вид">‹</button>
+<button class="ui arrow" id="next" type="button" aria-label="Следующий вид">›</button>
+<nav class="ui" id="nav"><button type="button" data-v="0">Стол</button><button type="button" data-v="1">Книжный шкаф</button><button type="button" data-v="2">Стол для карт</button></nav>
+<div id="tip"></div>
+
+<div id="reader" role="dialog" aria-modal="true" aria-label="Летопись"><div class="book" id="book"></div></div>
+<div id="narrow"><div><h2>Кабинет исследователя</h2><p>Откройте эту страницу на компьютере — здесь нужен широкий экран.</p></div></div>
+
 <script>
-const q = location.search; document.getElementById("u").textContent = location.href;
-document.getElementById("back").href = "index.html" + q;
-const inFrame = window.top !== window;
-document.getElementById("where").textContent = inFrame ? "Страница открыта внутри приложения ВК." : "Страница открыта в отдельной вкладке браузера — вне приложения ВК, на всю ширину экрана.";
-if (!inFrame) { const b = document.getElementById("back"); b.textContent = "Закрыть вкладку"; b.href = "#"; b.onclick = e => { e.preventDefault(); window.close(); }; }
-document.getElementById("vk").textContent = /vk_user_id=/.test(q) ? "Параметры ВК дошли — сайт знает, кто вы." : "Параметров ВК нет — страница открыта вне приложения.";
-</script></body></html>
+/* ---------- данные-заглушки ---------- */
+const TOMES = [
+  { id: "t1", n: "Том I", t: "Падение Хельграда", sub: "двадцать лет назад", state: "open", c1: "#8a5a2c", c2: "#4e2e14", crest: "I",
+    pages: [["Падение Хельграда", "Летопись. Том первый", "Это заглушка текста. Здесь будет хроника первого эпизода истории Велариса: как скверна вошла в военную столицу, кто пытался её остановить и почему империя отгородилась стенами, а не спасла город."],
+            ["Первая вспышка", "Глава первая", "Страница-заглушка. В каждой главе — несколько абзацев, даты, имена NPC и места на карте. Тексты томов мастер будет вписывать в Мастерской, как книги-документы."],
+            ["Стены и молчание", "Глава вторая", "Ещё одна страница-заглушка — чтобы проверить листание. Справа и слева страницы, переворот листа идёт как в настоящей книге."],
+            ["Последний паладин", "Глава третья", "Конец заглушки. В готовой версии здесь будут иллюстрации и сноски на Вестник."]] },
+  { id: "t2", n: "Том II", t: "Туман над Тенеградом", sub: "запечатан — ещё не прочитан", state: "sealed", c1: "#7a2420", c2: "#3e100d", crest: "II",
+    pages: [["Туман над Тенеградом", "Летопись. Том второй", "Заглушка. Этот том был перевязан лентой с печатью — так помечается новая, ещё не прочитанная летопись."],
+            ["Семья Верн", "Глава первая", "Страница-заглушка второго тома."]] },
+  { id: "t3", n: "Том III", t: "Летопись готовится", sub: "мастера ещё пишут", state: "ghost", crest: "III", pages: [] }
+];
+const CARDS = [
+  { pw: 7, row: "⚔ ближний", nm: "Боец", tp: "Тип: отряд · Класс: воин", rar: "#8a6a3a" },
+  { pw: 5, row: "🏹 дальний", nm: "Стрелок", tp: "Тип: отряд · Класс: разведчик", rar: "#8a6a3a" },
+  { pw: 9, row: "✶ осада", nm: "Маг", tp: "Тип: отряд · Класс: маг", rar: "#5b7bbf" },
+  { pw: "★", row: "особая", nm: "Карта Судьбы", tp: "Тип: особая · эффект", rar: "#b0372a" },
+  { pw: 12, row: "⚔ ближний", nm: "Герой", tp: "Тип: герой · не подвержен эффектам", rar: "#d4af37" },
+  { pw: "☁", row: "погода", nm: "Туман", tp: "Тип: погода · ослабляет ряд", rar: "#6e7e8e" }
+];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const LS = "velaris-study-v1"; let seen = {}; try { seen = JSON.parse(localStorage.getItem(LS)) || {}; } catch (_) {}
+const saveSeen = () => { try { localStorage.setItem(LS, JSON.stringify(seen)); } catch (_) {} };
+
+/* ---------- рисуем комнаты ---------- */
+const tomeHTML = (t, extra = "") => `<button type="button" class="obj tome${t.state === "ghost" ? " ghost" : ""}${t.state === "sealed" && seen[t.id] ? " untie" : ""}" data-tome="${t.id}" data-tip="${esc(t.n + " — " + t.t)}" style="--c1:${t.c1 || "#6b4123"};--c2:${t.c2 || "#3a2210"};${extra}">
+  <i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i><span class="crest">${esc(t.crest)}</span><span class="ttl">${esc(t.t)}</span><span class="sub">${esc(t.n)}</span>${t.state === "sealed" ? `<i class="ribbon"></i><i class="seal"></i>` : ""}<span class="ph">заглушка</span></button>`;
+$("#desk-objs").innerHTML =
+  tomeHTML(TOMES[0], "left:520px;top:600px;transform:rotate(-4deg)") + tomeHTML(TOMES[1], "left:790px;top:590px;transform:rotate(2deg)") + tomeHTML(TOMES[2], "left:1060px;top:600px;transform:rotate(5deg)") +
+  `<button type="button" class="obj candle" data-tip="Свеча" style="left:370px;top:520px"><i></i><b></b></button>
+   <button type="button" class="obj letters" data-tip="Письма — ваши документы" data-act="letters" style="left:1330px;top:700px"><i></i><i></i><i></i><span class="ph">заглушка</span></button>
+   <button type="button" class="obj scroll" data-tip="Карта империи — открыть Атлас" data-act="map" style="left:640px;top:930px;transform:rotate(-3deg)"><span class="ph">заглушка</span></button>
+   <button type="button" class="obj deck" data-tip="Колода — к столу для карт" data-go="2" style="left:1640px;top:640px"><i></i><i></i><i></i></button>
+   <button type="button" class="obj inkwell" data-tip="Чернильница" style="left:1250px;top:560px"><i></i><b></b></button>`;
+const spineCols = ["#6b4123", "#4e2e14", "#5a1f1a", "#2f3a2a", "#3c2c4a", "#6a5630", "#2b3442"];
+$("#case").innerHTML = [0, 1, 2].map(r => `<div class="shelf">${Array.from({ length: 14 }, (_, k) => {
+  const t = r === 0 && k < TOMES.length ? TOMES[k] : null, h = 180 + ((r * 7 + k * 13) % 70), w = 46 + ((k * 11 + r * 5) % 30);
+  return t ? `<button type="button" class="obj spine${t.state === "ghost" ? " deco" : ""}" data-tome="${t.id}" data-tip="${esc(t.n + " — " + t.t)}" style="--h:250px;--w:78px;--c:${t.c1 || "#4a3a2a"}"><span>${esc(t.n + " · " + t.t)}</span></button>`
+           : `<div class="spine deco" style="--h:${h}px;--w:${w}px;--c:${spineCols[(r + k) % spineCols.length]}"></div>`; }).join("")}</div>`).join("");
+$("#hand").innerHTML = CARDS.map((c, i) => `<div class="card" style="--r:${(i - 2.5) * 6}deg;--y:${Math.abs(i - 2.5) * 10}px;--rar:${c.rar}" data-tip="Шаблон карты: ${esc(c.nm)}"><b class="pw">${c.pw}</b><span class="row">${esc(c.row)}</span><div class="art">место для рисунка</div><div class="nm">${esc(c.nm)}</div><div class="tp">${esc(c.tp)}</div></div>`).join("");
+
+/* ---------- камера ---------- */
+let V = 0, busy = false, zoom = null;
+const fit = () => Math.max(innerWidth / 1920, innerHeight / 1080);
+const camT = (v, s = 1, fx = 960, fy = 540) => { const k = fit() * s; return `translate(${innerWidth / 2 - (v * 1920 + fx) * k}px, ${innerHeight / 2 - fy * k}px) scale(${k})`; };
+function place() { $("#world").style.transform = zoom ? camT(V, zoom.s, zoom.x, zoom.y) : camT(V); }
+function go(v) {
+  v = Math.max(0, Math.min(2, v)); if (v === V || busy) return; busy = true; const from = $("#world").style.transform || camT(V);
+  const a = $("#world").animate([{ transform: from }, { transform: camT((V + v) / 2, .82), offset: .5 }, { transform: camT(v) }], { duration: 1150, easing: "cubic-bezier(.55,.05,.25,1)" });
+  V = v; zoom = null; ui(); a.onfinish = () => { place(); busy = false; };
+}
+function ui() { document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.v === V))); $("#prev").disabled = V === 0; $("#next").disabled = V === 2; try { history.replaceState(null, "", "#" + ["stol", "shkaf", "karty"][V]); } catch (_) {} }
+/* наезд камеры на предмет перед открытием */
+function zoomTo(el, then) {
+  const room = el.closest(".room"), rr = room.getBoundingClientRect(), r = el.getBoundingClientRect(), k = rr.width / 1920;
+  const x = (r.left + r.width / 2 - rr.left) / k, y = (r.top + r.height / 2 - rr.top) / k;
+  zoom = { s: 1.9, x, y }; const a = $("#world").animate([{ transform: $("#world").style.transform }, { transform: camT(V, 1.9, x, y) }], { duration: 700, easing: "cubic-bezier(.5,0,.2,1)" });
+  a.onfinish = () => { place(); then(); };
+}
+function unzoom() { if (!zoom) return; const from = $("#world").style.transform; zoom = null; $("#world").animate([{ transform: from }, { transform: camT(V) }], { duration: 650, easing: "cubic-bezier(.3,0,.2,1)" }).onfinish = place; }
+addEventListener("resize", place);
+addEventListener("mousemove", e => { const r = document.documentElement.style; r.setProperty("--mx", ((e.clientX / innerWidth) - .5) * -2); r.setProperty("--my", ((e.clientY / innerHeight) - .5) * -1.4); });
+
+/* ---------- подсказки ---------- */
+const tip = $("#tip");
+document.addEventListener("mouseover", e => { const o = e.target.closest("[data-tip]"); if (!o) return tip.classList.remove("on"); tip.textContent = o.dataset.tip; tip.classList.add("on"); });
+document.addEventListener("mousemove", e => { tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; });
+
+/* ---------- читалка ---------- */
+let BK = null, P = 0;
+const pageHTML = (pg, n, side) => pg ? `<h2>${esc(pg[0])}</h2><h3>${esc(pg[1])}</h3><p>${esc(pg[2])}</p><span class="pn">— ${n} —</span>` : `<span class="pn">— ${n} —</span>`;
+function bookDraw() {
+  const pg = BK.pages, L = pg[P], R = pg[P + 1];
+  $("#book").style.cssText = `--c1:${BK.c1};--c2:${BK.c2}`;
+  $("#book").innerHTML = `<i class="cover-shadow"></i><div class="page l">${pageHTML(L, P + 1)}</div><div class="page r">${pageHTML(R, P + 2)}</div><div class="leaf" id="leaf"><div class="front page r"></div><div class="back page l"></div></div>
+    <button class="rclose" type="button" data-rclose aria-label="Закрыть">✕</button>
+    <div class="rnav"><button type="button" data-flip="-1" ${P === 0 ? "disabled" : ""} aria-label="Назад">‹</button><span>${esc(BK.n)} · ${esc(BK.t)} · стр. ${P + 1}–${Math.min(P + 2, pg.length)} из ${pg.length}</span><button type="button" data-flip="1" ${P + 2 >= pg.length ? "disabled" : ""} aria-label="Вперёд">›</button></div>`;
+  $("#leaf").style.display = "none";
+}
+function flip(d) {
+  const pg = BK.pages, np = P + d * 2; if (np < 0 || np >= pg.length) return;
+  const leaf = $("#leaf"); leaf.style.display = "";
+  if (d > 0) { leaf.querySelector(".front").innerHTML = pageHTML(pg[P + 1], P + 2); leaf.querySelector(".back").innerHTML = pageHTML(pg[np], np + 1); $(".page.r:not(.front)").innerHTML = pageHTML(pg[np + 1], np + 2); requestAnimationFrame(() => leaf.classList.add("turn")); }
+  else { leaf.classList.add("turnback", "turn"); leaf.querySelector(".back").innerHTML = pageHTML(pg[P], P + 1); leaf.querySelector(".front").innerHTML = pageHTML(pg[np + 1], np + 2); $(".page.l:not(.back)").innerHTML = pageHTML(pg[np], np + 1); void leaf.offsetWidth; leaf.classList.remove("turnback"); requestAnimationFrame(() => leaf.classList.remove("turn")); }
+  setTimeout(() => { P = np; bookDraw(); }, 820);
+}
+function openTome(t, el) {
+  if (t.state === "ghost") { tip.textContent = "Этот том ещё пишется"; return; }
+  const doOpen = () => zoomTo(el, () => { BK = t; P = 0; bookDraw(); $("#reader").classList.add("on"); });
+  if (t.state === "sealed" && !seen[t.id]) {
+    seen[t.id] = 1; saveSeen(); document.querySelectorAll(`[data-tome="${t.id}"]`).forEach(x => x.classList.add("untie")); setTimeout(doOpen, 750);
+  } else doOpen();
+}
+function closeReader() { $("#reader").classList.remove("on"); unzoom(); }
+
+/* ---------- клики ---------- */
+document.addEventListener("click", e => {
+  const t = e.target;
+  const nv = t.closest("#nav [data-v]"); if (nv) return go(+nv.dataset.v);
+  if (t.closest("#prev")) return go(V - 1); if (t.closest("#next")) return go(V + 1);
+  if (t.closest("#close")) { window.close(); location.href = "index.html" + location.search; return; }
+  if (t.closest("[data-rclose]") || t === $("#reader")) return closeReader();
+  const fl = t.closest("[data-flip]"); if (fl) return flip(+fl.dataset.flip);
+  const g = t.closest("[data-go]"); if (g) return go(+g.dataset.go);
+  const tm = t.closest("[data-tome]"); if (tm) return openTome(TOMES.find(x => x.id === tm.dataset.tome), tm);
+  const a = t.closest("[data-act]"); if (a) {
+    if (a.dataset.act === "map") return zoomTo(a, () => { location.href = "karta.html" + location.search; });
+    if (a.dataset.act === "letters") return zoomTo(a, () => { location.href = "index.html" + location.search + "#inventar"; });
+  }
+});
+addEventListener("keydown", e => {
+  if ($("#reader").classList.contains("on")) { if (e.key === "Escape") closeReader(); if (e.key === "ArrowRight") flip(1); if (e.key === "ArrowLeft") flip(-1); return; }
+  if (e.key === "ArrowRight") go(V + 1); if (e.key === "ArrowLeft") go(V - 1);
+});
+
+/* ---------- окно: время суток по часам ---------- */
+function skyDraw() {
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  const night = h < 5.5 || h >= 21, dawn = h >= 5.5 && h < 8, dusk = h >= 18 && h < 21;
+  $("#sky").style.background = night ? "linear-gradient(180deg, #050a1c, #13244d 60%, #1d3463)" : dawn ? "linear-gradient(180deg, #2a3a6a, #b86a5a 60%, #f0b27a)" : dusk ? "linear-gradient(180deg, #1c2550, #7a4a6a 55%, #e08a5a)" : "linear-gradient(180deg, #6a8cc0, #a9c3de 60%, #d9e3ea)";
+  $("#moon").style.opacity = night || dusk ? 1 : 0;
+}
+skyDraw(); setInterval(skyDraw, 60000);
+
+/* старт */
+V = { stol: 0, shkaf: 1, karty: 2 }[location.hash.slice(1)] ?? 0; place(); ui();
+</script>
+</body>
+</html>
