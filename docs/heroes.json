@@ -4028,6 +4028,12 @@
    "n": "Изумруд и бронза",
    "leather": "#16301f",
    "metal": "bronze"
+  },
+  {
+   "id": "tmvthglxa",
+   "n": "Новый образец",
+   "leather": "#3a1d3c",
+   "metal": "silver"
   }
  ]
 }
