@@ -930,6 +930,40 @@ async function npUpdate(mutate, message) {
   }
   throw new Error("Портреты менялись одновременно с вами. Попробуйте ещё раз.");
 }
+/* ---------- NPC из Мастерской (docs/npcs.json): { list: [{ id, side: "master"|"players", n, role, age, sex, fac, skills: [[навык, уровень, пояснение]], bio, home, inv, money, img, crop, hidden }] }
+   id встроенного NPC (valdis, kain…) — правка встроенного; hidden — убран из перечня. ---------- */
+const npcsNorm = d => ({ list: d && Array.isArray(d.list) ? d.list : [] });
+async function npcsLoad(fresh) {
+  const c = ghCfg(); let data = null;
+  try {
+    if (fresh && c.token) data = (await ghRead(c, "docs/npcs.json")).data;
+    else { const r = await fetch("docs/npcs.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
+  } catch (_) {}
+  return npcsNorm(data);
+}
+async function npcsUpdate(mutate, message) {
+  const c = ghCfg();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, sha } = await ghRead(c, "docs/npcs.json");
+    const N = npcsNorm(data); mutate(N);
+    try { await ghWrite(c, "docs/npcs.json", N, sha, message); return N; }
+    catch (e) { if (e.status !== 409 && e.status !== 422) throw e; }
+  }
+  throw new Error("Перечень NPC менялся одновременно с вами. Попробуйте ещё раз.");
+}
+const npcParas = v => Array.isArray(v) ? v : String(v || "").split(/\n\s*\n|\n/).map(x => x.trim()).filter(Boolean);
+function npcMerge(base, e) {
+  const c = Object.assign({}, base || {});
+  if (!e) return c;
+  const set = (k, v) => { if (v !== undefined && v !== null && v !== "") c[k] = v; };
+  c.key = e.id; set("name", e.n); set("role", e.role); set("age", e.age); set("sex", e.sex); set("fac", e.fac);
+  if (Array.isArray(e.skills) && e.skills.some(s => s[0])) c.skills = e.skills.filter(s => s[0]);
+  ["bio", "home", "inv", "money"].forEach(k => { if (e[k] !== undefined && String(e[k]).trim()) c[k] = npcParas(e[k]); });
+  if (e.img) { c.cardImg = { img: e.img, crop: e.crop || null }; c.photos = [e.img]; }
+  c.side = e.side || (base ? "master" : "master");
+  if (!c.fac) c.fac = "Без фракции";
+  return c;
+}
 function scFace(h) {
   const n = graveShort(h.n || "Без имени", 18), ini = String(h.n || "?").trim().charAt(0).toUpperCase() || "?";
   return `<span class="sc-f${n.length > 12 ? " long" : ""}"><span class="sc-pic">${h.img ? `<img src="${fateEsc(h.img)}"${h.crop && +h.crop.w ? ` class="cr" style="${pcStyle(h.crop)}"` : ""} alt="" loading="lazy" onerror="heroImgFallback(this)">` : `<span class="sc-ph">${fateEsc(ini)}</span>`}</span><span class="sc-bn"><b>${fateEsc(n)}</b>${h.title ? `<small>${fateEsc(h.title)}</small>` : ""}</span></span>`;
@@ -1390,26 +1424,32 @@ const picsOf = c => c.pics || PICS[c.key] || [];
 const ava = c => { const p = picsOf(c)[0]; return p ? `<img class="mono ava" src="npc/${p}-t.webp" alt="" loading="lazy">` : `<span class="mono">${esc(c.name[0])}</span>`; };
 const gallery = list => list.length ? `<div class="gal wide">${list.map(p => `<button type="button" class="gp" data-zoom="npc/${p}.webp"><img src="npc/${p}.webp" alt="Внешность" loading="lazy"></button>`).join("")}</div>` : "";
 let charFilter = "Все", charQuery = "";
-const MASTER_NPCS = () => D.chars.filter(c => !GR_DEAD().has(c.key)).concat([{ key: "callahan", name: "Семья Каллахан", role: "Люсиль, Патрик и Дуайт", age: "", fac: "Без фракции", family: true }]);
+let NPCS = { list: [] };
+const npcEntry = key => NPCS.list.find(e => e.id === key);
+const MASTER_NPCS = () => D.chars.filter(c => !GR_DEAD().has(c.key) && !(npcEntry(c.key) || {}).hidden).map(c => npcMerge(c, npcEntry(c.key)))
+  .concat((npcEntry("callahan") || {}).hidden ? [] : [{ key: "callahan", name: "Семья Каллахан", role: "Люсиль, Патрик и Дуайт", age: "", fac: "Без фракции", family: true }])
+  .concat(NPCS.list.filter(e => !e.hidden && (e.side || "master") === "master" && !D.chars.some(c => c.key === e.id) && e.id !== "callahan" && !GR_DEAD().has(e.id)).map(e => npcMerge(null, e)));
+const npcPlayers = () => PLAYER_NPCS.concat(NPCS.list.filter(e => !e.hidden && e.side === "players").map(e => npcMerge(null, e)));
 let NPC_OVR = {};
 function charCards(list) {
   const q = charQuery.trim().toLowerCase();
   const shown = list.filter(c => (charFilter === "Все" || c.fac === charFilter) && (!q || (c.name + " " + (c.role || "") + (c.family ? " Люсиль Патрик Дуайт Каллахан" : "")).toLowerCase().includes(q)));
   if (!shown.length) return `<p class="note">${q ? "Никого не нашлось. Проверьте имя." : "Пусто."}</p>`;
   return `<div class="sdeck npc-deck">${shown.map((c, i) => { const f = facByName(c.fac), col = (f || {}).color || NONE_COL, pic = picsOf(c)[0];
-    return `<button type="button" class="sc npc-c" data-char="${c.key}" style="--i:${Math.min(i, 8) - 3};${scVarsT({ leather: scShade(col, -.35), metal: "gold" })}">${scFace(Object.assign({ n: c.name, title: c.role || "" }, npcCardImg(c.key, NPC_OVR[c.key], picsOf(c))))}</button>`; }).join("")}</div>`;
+    return `<button type="button" class="sc npc-c" data-char="${c.key}" style="--i:${Math.min(i, 8) - 3};${scVarsT({ leather: scShade(col, -.35), metal: "gold" })}">${scFace(Object.assign({ n: c.name, title: c.role || "" }, c.cardImg || npcCardImg(c.key, NPC_OVR[c.key], picsOf(c))))}</button>`; }).join("")}</div>`;
 }
 let NPC_SIDE = "master";
 function npcAllHTML() {
-  const sw = `<div class="fpick npc-sw bh-c">${[["master", "NPC мастера", MASTER_NPCS().length], ["players", "NPC игроков", PLAYER_NPCS.length]].map(([k, t, n]) => `<button type="button" class="fp-b" data-npcside="${k}" aria-pressed="${NPC_SIDE === k}">${t}<span>${n}</span></button>`).join("")}</div>`;
+  const sw = `<div class="fpick npc-sw bh-c">${[["master", "NPC мастера", MASTER_NPCS().length], ["players", "NPC игроков", npcPlayers().length]].map(([k, t, n]) => `<button type="button" class="fp-b" data-npcside="${k}" aria-pressed="${NPC_SIDE === k}">${t}<span>${n}</span></button>`).join("")}</div>`;
   return boardHead("NPC", "Личности Велариса", "Герои мастера и персонажи, которых игроки ввели в мир.", "star") + sw + `<div id="npc-side">${charsHTML(NPC_SIDE, true)}</div>`;
 }
+npcsLoad(false).then(N => { NPCS = N; if (N.list.length) { const box = $("#npc-side"); if (box) box.innerHTML = charsHTML(NPC_SIDE, true); const sw = document.querySelectorAll("[data-npcside] span"); if (sw.length === 2) { sw[0].textContent = MASTER_NPCS().length; sw[1].textContent = npcPlayers().length; } } });
 npLoad(false).then(m => { NPC_OVR = m; if (Object.keys(m).length) { const box = $("#npc-side"); if (box) box.innerHTML = charsHTML(NPC_SIDE, true); } });
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-npcside]"); if (!b) return; NPC_SIDE = b.dataset.npcside; charFilter = "Все"; document.querySelectorAll("[data-npcside]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); const box = $("#npc-side"); if (box) box.innerHTML = charsHTML(NPC_SIDE, true); });
 function charsHTML(which, bare) {
   if (which === "players") {
     return (bare ? "" : head("NPC", "NPC игроков", "Персонажи, которых игроки ввели в мир.")) +
-      (PLAYER_NPCS.length ? `<div class="search"><input type="text" id="npc-q" placeholder="Поиск по имени" value="${esc(charQuery)}" aria-label="Поиск по имени"></div><div id="npc-list">${charCards(PLAYER_NPCS)}</div>`
+      (npcPlayers().length ? `<div class="search"><input type="text" id="npc-q" placeholder="Поиск по имени" value="${esc(charQuery)}" aria-label="Поиск по имени"></div><div id="npc-list">${charCards(npcPlayers())}</div>`
         : `<p class="note">Пока здесь пусто. Принятые анкеты NPC появятся в этом разделе.</p>`) +
       (bare ? `<p class="npc-note">Анкеты NPC — в <a class="vk" href="${D.npcTopic}" target="_blank" rel="noopener">обсуждении группы</a>. Правила — в разделе «Правила».</p>` : `<h3>Правила NPC игроков</h3>${ol(D.rulesNpc)}<p>Анкеты NPC: <a class="vk" href="${D.npcTopic}" target="_blank" rel="noopener">обсуждение в группе</a>.</p>`);
   }
@@ -1422,7 +1462,7 @@ function charsHTML(which, bare) {
 function charDetail(c) {
   if (c.family) return `<button class="x" type="button" data-close aria-label="Закрыть">${svg("x")}</button>` + callahanHTML();
   const sec = (t, arr, list) => arr && arr.length ? `<h3>${t}</h3>` + (list ? ol(arr, true) : arr.map(p => `<p>${linkify(p)}</p>`).join("")) : "";
-  return `<button class="x" type="button" data-close aria-label="Закрыть">${svg("x")}</button>` + head(c.fac, c.name, c.role) + gallery(picsOf(c)) +
+  return `<button class="x" type="button" data-close aria-label="Закрыть">${svg("x")}</button>` + head(c.fac, c.name, c.role) + (c.photos ? `<div class="gal wide">${c.photos.map(u => `<button type="button" class="gp" data-zoom="${esc(u)}"><img src="${esc(u)}" alt="Внешность" loading="lazy"></button>`).join("")}</div>` : gallery(picsOf(c))) +
     `<dl class="kv">${c.age ? `<dt>Возраст</dt><dd>${esc(c.age)}</dd>` : ""}${c.sex ? `<dt>Пол</dt><dd>${esc(c.sex)}</dd>` : ""}${(c.extra || []).map(e => `<dt>${esc(e[0])}</dt><dd>${esc(e[1])}</dd>`).join("")}${c.art ? `<dt>Арт</dt><dd><a class="vk" href="${esc(c.art)}" target="_blank" rel="noopener">открыть в ВК</a></dd>` : ""}</dl>
      <h3>Навыки</h3><div class="skills">${(c.skills || []).map(s => `<div class="skill"><b>${esc(s[0])}</b><i>${esc(s[1])}</i>${s[2] ? `<p>${esc(s[2])}</p>` : ""}</div>`).join("")}</div>` +
     sec("Биография", c.bio) + sec("Местожительство", c.home) + sec("Инвентарь", c.inv, true) + sec("Финансы и имущество", c.money) + sec("Принадлежность", c.facText);
@@ -2480,7 +2520,7 @@ document.addEventListener("click", e => {
   const vi = t.closest("[data-vi]"); if (vi) { vIssue = +vi.dataset.vi; $("#sheet").innerHTML = vestnikHTML(); const sh = $("#sheet"); if (sh.getBoundingClientRect().top < 0) sh.scrollIntoView({ behavior: "smooth" }); return; }
   const fa = t.closest("[data-fac]"); if (fa) { const o = fa.parentElement.classList.toggle("open"); fa.setAttribute("aria-expanded", String(o)); return; }
   const qf = t.closest("[data-qf]"); if (qf) { qFilter = qf.dataset.qf; document.querySelectorAll("[data-qf]").forEach(b => b.setAttribute("aria-pressed", String(b === qf))); $("#qlist").innerHTML = questList(); return; }
-  const ch = t.closest("[data-char]"); if (ch) { const c = MASTER_NPCS().concat(PLAYER_NPCS).find(x => x.key === ch.dataset.char); $("#ovs").innerHTML = charDetail(c); $("#ovs").scrollTop = 0; $("#ov").classList.add("on"); return; }
+  const ch = t.closest("[data-char]"); if (ch) { const c = MASTER_NPCS().concat(npcPlayers()).find(x => x.key === ch.dataset.char); $("#ovs").innerHTML = charDetail(c); $("#ovs").scrollTop = 0; $("#ov").classList.add("on"); return; }
   const zm = t.closest("[data-zoom]"); if (zm) { const z = $("#zoom"); z.querySelector("img").src = zm.dataset.zoom; z.classList.add("on"); return; }
   if (t.closest("#zoom")) { $("#zoom").classList.remove("on"); return; }
   if (t.closest("[data-close]") || t.id === "ov") { $("#ov").classList.remove("on"); return; }
@@ -2500,7 +2540,7 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("input", e => {
   const t = e.target;
-  if (t.id === "npc-q") { charQuery = t.value; const lst = tab.mir === "npcp" ? PLAYER_NPCS : MASTER_NPCS(); $("#npc-list").innerHTML = charCards(lst); return; }
+  if (t.id === "npc-q") { charQuery = t.value; const lst = NPC_SIDE === "players" ? npcPlayers() : MASTER_NPCS(); $("#npc-list").innerHTML = charCards(lst); return; }
   if (t.dataset.ak) { ak[t.dataset.ak] = t.value; anketaRefresh(); }
   if (t.dataset.sk != null) { ak.skills[+t.dataset.sk][0] = t.value; anketaRefresh(); }
   if (t.dataset.skl != null) { ak.skills[+t.dataset.skl][1] = t.value; anketaRefresh(); }
