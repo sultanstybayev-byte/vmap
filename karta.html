@@ -371,8 +371,8 @@ const menuEdge = () => {
 let peekT = 0;
 (() => { const m = document.getElementById("menu"); if (!m) return;
   const hov = () => matchMedia("(hover: hover)").matches && !isNarrow();
-  m.addEventListener("mouseenter", () => { if (!hov()) return; clearTimeout(peekT); document.body.classList.add("peek"); });
-  m.addEventListener("mouseleave", () => { if (!hov()) return; clearTimeout(peekT); peekT = setTimeout(() => { if (!document.querySelector("#flyout.open")) document.body.classList.remove("peek"); }, 280); });
+  const inMenu = t => t && t.closest && t.closest("#menu") && !t.closest(".zoombar");
+  document.addEventListener("pointerover", e => { if (!hov() || e.pointerType !== "mouse") return; if (inMenu(e.target)) { clearTimeout(peekT); document.body.classList.add("peek"); } else if (document.body.classList.contains("peek")) { clearTimeout(peekT); peekT = setTimeout(() => { if (!document.querySelector("#flyout.open") && !document.querySelector("#menu:hover > :not(.zoombar):hover")) document.body.classList.remove("peek"); }, 280); } });
   addEventListener("load", () => fold(true));
 })();
 function fold(on) {
@@ -614,7 +614,7 @@ $("#b-close").addEventListener("click", closePanel);
 
 let flyMode = null;
 function closeFly() {
-  flyout.classList.remove("open"); flyMode = null; if (!document.querySelector("#menu:hover")) document.body.classList.remove("peek");
+  flyout.classList.remove("open"); flyMode = null; if (!document.querySelector("#menu > :not(.zoombar):hover")) document.body.classList.remove("peek");
   $("#b-places").setAttribute("aria-expanded", "false");
 }
 function openFly(mode) {

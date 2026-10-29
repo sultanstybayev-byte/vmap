@@ -285,6 +285,12 @@ async function ghRead(c, path) {
   const j = await r.json();
   return { data: JSON.parse(b64utf8(j.content)), sha: j.sha };
 }
+async function ghReadFast(c, path) {
+  const site = () => fetch(path + "?t=" + Date.now(), { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null).then(data => ({ data, sha: null }));
+  let timer; const slow = new Promise(res => { timer = setTimeout(() => res("slow"), 5000); });
+  try { const r = await Promise.race([ghRead(c, path), slow]); clearTimeout(timer); return r === "slow" ? site() : r; }
+  catch (_) { clearTimeout(timer); return site(); }
+}
 async function ghWrite(c, path, obj, sha, message) {
   const r = await ghApi(c, path, { method: "PUT", body: JSON.stringify({ message, content: utf8b64(JSON.stringify(obj, null, 1)), sha: sha || undefined }) });
   if (!r.ok) { const e = new Error(ghErr(r.status)); e.status = r.status; throw e; }
@@ -296,7 +302,7 @@ const DEFAULT_FOLDERS = [
 ];
 async function dbIndex(fresh) {
   const c = ghCfg(); let data = null;
-  if (fresh && c.token) data = (await ghRead(c, "docs/index.json")).data;
+  if (fresh && c.token) data = (await ghReadFast(c, "docs/index.json")).data;
   else { try { const r = await fetch("docs/index.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); } catch (_) {} }
   data = data || {};
   return { docs: (data.docs || []).filter(d => !d.deleted), folders: data.folders || (data.docs ? DEFAULT_FOLDERS.slice() : []) };
@@ -391,7 +397,7 @@ function askYes(text, yes = "Да", no = "Отмена", danger = false) {
    states[название квеста] = { st: "free" | "busy" | "done", end: "итоги", date } */
 async function qsLoad(fresh) {
   const c = ghCfg();
-  if (fresh && c.token) { const { data } = await ghRead(c, "docs/quests.json"); return (data && data.states) || {}; }
+  if (fresh && c.token) { const { data } = await ghReadFast(c, "docs/quests.json"); return (data && data.states) || {}; }
   try { const r = await fetch("docs/quests.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) return (await r.json()).states || {}; } catch (_) {}
   return {};
 }
@@ -423,7 +429,7 @@ function applyQuestStates(st) {
 const ROLE_NAMES = { creator: "Создатель", administrator: "Админ", editor: "Редактор", moderator: "Модератор", member: "Участник" };
 async function plLoad(fresh) {
   const c = ghCfg();
-  if (fresh && c.token) { const { data } = await ghRead(c, "docs/players.json"); return data || { list: [] }; }
+  if (fresh && c.token) { const { data } = await ghReadFast(c, "docs/players.json"); return data || { list: [] }; }
   try { const r = await fetch("docs/players.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) return await r.json(); } catch (_) {}
   return { list: [] };
 }
@@ -440,7 +446,7 @@ async function plUpdate(mutate, message) {
 }
 async function stLoad(fresh) {
   const c = ghCfg();
-  if (fresh && c.token) { const { data } = await ghRead(c, "docs/settings.json"); return data || {}; }
+  if (fresh && c.token) { const { data } = await ghReadFast(c, "docs/settings.json"); return data || {}; }
   const r = await fetch("docs/settings.json?t=" + Date.now(), { cache: "no-store" });
   if (r.status === 404) return {};
   if (!r.ok) throw new Error("settings " + r.status);
@@ -529,7 +535,7 @@ const WANTED_SEED = [
 async function wnLoad(fresh) {
   const c = ghCfg(); let data = null;
   try {
-    if (fresh && c.token) data = (await ghRead(c, "docs/wanted.json")).data;
+    if (fresh && c.token) data = (await ghReadFast(c, "docs/wanted.json")).data;
     else { const r = await fetch("docs/wanted.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
   } catch (_) {}
   return { list: data && Array.isArray(data.list) ? data.list : JSON.parse(JSON.stringify(WANTED_SEED)), trash: (data && data.trash) || [] };
@@ -573,7 +579,7 @@ const deathsNorm = d => ({ list: d && Array.isArray(d.list) ? d.list : [] });
 async function deathsLoad(fresh) {
   const c = ghCfg(); let data = null;
   try {
-    if (fresh && c.token) data = (await ghRead(c, "docs/deaths.json")).data;
+    if (fresh && c.token) data = (await ghReadFast(c, "docs/deaths.json")).data;
     else { const r = await fetch("docs/deaths.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
   } catch (_) {}
   return deathsNorm(data);
@@ -591,7 +597,7 @@ async function deathsUpdate(mutate, message) {
 async function grLoad(fresh) {
   const c = ghCfg(); let data = null;
   try {
-    if (fresh && c.token) data = (await ghRead(c, "docs/graves.json")).data;
+    if (fresh && c.token) data = (await ghReadFast(c, "docs/graves.json")).data;
     else { const r = await fetch("docs/graves.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
   } catch (_) {}
   return graveNorm(data);
@@ -626,7 +632,7 @@ const fateNorm = data => ({ cards: data && Array.isArray(data.cards) && data.car
 async function fateLoad(fresh) {
   const c = ghCfg(); let data = null;
   try {
-    if (fresh && c.token) data = (await ghRead(c, "docs/fate.json")).data;
+    if (fresh && c.token) data = (await ghReadFast(c, "docs/fate.json")).data;
     else { const r = await fetch("docs/fate.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
   } catch (_) {}
   return fateNorm(data);
@@ -663,7 +669,7 @@ const heroNorm = d => ({ list: d && Array.isArray(d.list) ? d.list : [], hide: d
 async function heroLoad(fresh) {
   const c = ghCfg(); let data = null;
   try {
-    if (fresh && c.token) data = (await ghRead(c, "docs/heroes.json")).data;
+    if (fresh && c.token) data = (await ghReadFast(c, "docs/heroes.json")).data;
     else { const r = await fetch("docs/heroes.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
   } catch (_) {}
   return heroNorm(data);
@@ -706,7 +712,7 @@ function npcCardImg(key, o, pics) {
 async function npLoad(fresh) {
   const c = ghCfg(); let data = null;
   try {
-    if (fresh && c.token) data = (await ghRead(c, "docs/npcpics.json")).data;
+    if (fresh && c.token) data = (await ghReadFast(c, "docs/npcpics.json")).data;
     else { const r = await fetch("docs/npcpics.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
   } catch (_) {}
   return data && typeof data === "object" ? data : {};
@@ -727,7 +733,7 @@ const npcsNorm = d => ({ list: d && Array.isArray(d.list) ? d.list : [] });
 async function npcsLoad(fresh) {
   const c = ghCfg(); let data = null;
   try {
-    if (fresh && c.token) data = (await ghRead(c, "docs/npcs.json")).data;
+    if (fresh && c.token) data = (await ghReadFast(c, "docs/npcs.json")).data;
     else { const r = await fetch("docs/npcs.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
   } catch (_) {}
   return npcsNorm(data);
@@ -787,7 +793,7 @@ const achNorm = d => ({ list: d && Array.isArray(d.list) ? d.list : [], awards: 
 async function achLoad(fresh) {
   const c = ghCfg(); let data = null;
   try {
-    if (fresh && c.token) data = (await ghRead(c, "docs/achievements.json")).data;
+    if (fresh && c.token) data = (await ghReadFast(c, "docs/achievements.json")).data;
     else { const r = await fetch("docs/achievements.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) data = await r.json(); }
   } catch (_) {}
   return achNorm(data);
