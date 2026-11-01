@@ -88,14 +88,14 @@
    "icon": "book"
   },
   {
-   "id": "f-tainye",
-   "name": "Тайные бумаги",
-   "icon": "key"
-  },
-  {
    "id": "f-mvrtjaty",
    "name": "Кара Небесная (Квест)",
    "icon": "g-circle:54"
+  },
+  {
+   "id": "f-tainye",
+   "name": "Тайные бумаги",
+   "icon": "key"
   }
  ]
 }
