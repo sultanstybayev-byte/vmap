@@ -43,16 +43,7 @@
   },
   {
    "no": 9,
-   "kind": "pismo",
-   "title": "Письмо",
-   "note": "Получены в ходе побега из Храма",
-   "vis": "to",
-   "public": false,
-   "to": [],
-   "created": "28 октября 2026 г.",
-   "updated": "31 октября 2026 г.",
-   "folder": "f-mvrtjaty",
-   "quest": "Кара Небесная"
+   "deleted": true
   },
   {
    "no": 10,
