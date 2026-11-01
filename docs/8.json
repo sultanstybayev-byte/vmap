@@ -27,7 +27,7 @@
     "ps": "",
     "seal": "none",
     "wax": "red",
-    "dropcap": true,
+    "dropcap": false,
     "corners": false,
     "folds": false,
     "blots": true,
