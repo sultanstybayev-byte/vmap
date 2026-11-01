@@ -83,14 +83,14 @@
    "icon": "crown"
   },
   {
-   "id": "f-knigi",
-   "name": "Книги и дневники",
-   "icon": "book"
-  },
-  {
    "id": "f-mvrtjaty",
    "name": "Кара Небесная (Квест)",
    "icon": "g-circle:54"
+  },
+  {
+   "id": "f-knigi",
+   "name": "Книги и дневники",
+   "icon": "book"
   },
   {
    "id": "f-tainye",
