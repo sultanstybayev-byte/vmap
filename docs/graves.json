@@ -76,7 +76,7 @@
   }
  ],
  "hide": {
-  "pc": false,
-  "npc": false
+  "pc": true,
+  "npc": true
  }
 }
