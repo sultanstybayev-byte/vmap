@@ -65,6 +65,26 @@ html.ny-home .tile:hover .mm-ring circle:not(.in), html.ny-home .tile:focus-visi
 html.ny-home .toast { z-index: 80; }
 @media (prefers-reduced-motion: reduce) { #ny-snow, .ny-puff { display: none; } .ny-aur, .ny-gar .bl { animation: none; } }
 </style>
+<style>
+/* ---------- Окно 18+ и согласие при первом запуске ---------- */
+.age { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); background: radial-gradient(ellipse at 50% 40%, rgba(40,26,14,.88), rgba(8,5,3,.97)); overflow-y: auto; animation: agein .5s ease both; }
+@keyframes agein { from { opacity: 0; } }
+.age-card { width: min(520px, 100%); text-align: center; padding: 30px clamp(18px, 5vw, 38px) 26px; border-radius: 10px; color: #ead9b4;
+  background: linear-gradient(180deg, rgba(42,29,18,.97), rgba(23,16,10,.97)); border: 1px solid rgba(201,162,90,.55); box-shadow: inset 0 0 0 4px rgba(23,17,11,.9), inset 0 0 0 5px rgba(201,162,90,.3), 0 20px 60px rgba(0,0,0,.6); }
+.age-seal { width: 92px; height: 92px; margin: 0 auto 14px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 40% 35%, #b8402a, #6e1a10 70%); box-shadow: 0 0 0 3px rgba(201,162,90,.6), 0 0 26px rgba(140,42,26,.55); font: 700 34px/1 var(--font-display); color: #f7e3b6; letter-spacing: .02em; }
+.age-card h2 { margin: 0 0 6px; font: 700 26px/1.2 var(--font-display); color: #f0d696; letter-spacing: .04em; }
+.age-card p { margin: 0 0 12px; font: 500 17px/1.5 var(--font-body); }
+.age-card .age-warn { font-style: italic; color: #e6b8a0; }
+.age-card .age-doc { font-size: 15px; color: rgba(234,217,180,.85); }
+.age-card a { color: #f0d696; }
+.age-btns { display: grid; gap: 10px; margin-top: 18px; }
+.age-btns button { cursor: pointer; border-radius: 7px; padding: 12px 16px; font: 700 17px/1.2 var(--font-display); letter-spacing: .05em; }
+.age-yes { border: 1px solid #f0d696; color: #1d140c; background: linear-gradient(180deg, #f0d696, #c9a25a); }
+.age-yes:hover, .age-yes:focus-visible { filter: brightness(1.08); outline: 2px solid #f0d696; outline-offset: 2px; }
+.age-no { border: 1px solid rgba(201,162,90,.5); color: #ead9b4; background: transparent; }
+.age-no:hover, .age-no:focus-visible { border-color: #f0d696; outline: none; }
+html.age-lock, html.age-lock body { overflow: hidden; }
+</style>
 </head>
 <body>
 <div class="bg" aria-hidden="true"></div>
@@ -1538,7 +1558,7 @@ function homeHTML() {
       !MEMBER && !GUEST_TILES.has(ic) ? `<a class="tile locked${cls ? " " + cls : ""}" style="--i:${i++}" href="#" data-locked><span class="mmed"><svg class="mm-ring" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21"/><circle class="in" cx="24" cy="24" r="17.5"/><path class="gem" d="M24 .8l2.2 2.6L24 6l-2.2-2.6zM24 42l2.2 2.6L24 47.2l-2.2-2.6z"/></svg>${svg(ic, "mm-ic")}</span><b>${esc(t)}</b><span>Для участников группы</span>${svg("lock", "arrow")}</a>` :
       `<a class="tile${cls ? " " + cls : ""}${ic === "inv" ? " bagtile" : ""}" style="--i:${i++}" href="${href}"${ic === "tarot" ? " data-tarot" : ""}${ic === "inv" ? ` data-invtile aria-label="${esc(t)}" title="${esc(t)}"` : ""}${ic === "vestnik" ? ` data-fresh="Выпуск от ${esc(D.vestnik[D.vestnik.length - 1].d)}"` : ""}>${ic === "inv" ? SATCHEL_SVG : ic === "tarot" ? `${svg(ic)}<b>${esc(t)}</b><span>${esc(s)}</span>` : `<span class="mmed"><svg class="mm-ring" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21"/><circle class="in" cx="24" cy="24" r="17.5"/><path class="gem" d="M24 .8l2.2 2.6L24 6l-2.2-2.6zM24 42l2.2 2.6L24 47.2l-2.2-2.6z"/></svg>${svg(ic, "mm-ic")}</span><b>${esc(t)}</b><span>${esc(s)}</span>`}${ic === "tarot" ? `<i class="tfan" aria-hidden="true"><img src="${CARDBACK}" alt=""><img src="${CARDBACK}" alt=""><img src="${CARDBACK}" alt=""></i>` : ""}${svg("arrow", "arrow")}</a>`).join("")}</div></section>`).join("")}</div>
     ${ADMIN && OUT_DESK ? `<p class="foot"><a class="test-link" href="${new URL("test.html" + KEEP, location.href).href}" target="_blank" rel="noopener">⚗ Тестовая страница — откроется в отдельной вкладке (видят только админы)</a></p>` : ""}
-    <p class="foot">Вопросы и анкеты — <a href="${D.master}" target="_blank" rel="noopener">мастеру игры</a>.</p>`;
+    <p class="foot">Вопросы и анкеты — <a href="${D.master}" target="_blank" rel="noopener">мастеру игры</a>.<br><a href="pravila.html${KEEP}#soglashenie" target="_blank" rel="noopener">Пользовательское соглашение</a> · <a href="pravila.html${KEEP}#konfidencialnost" target="_blank" rel="noopener">Конфиденциальность</a> · 18+</p>`;
 }
 
 const facByName = n => { const k = String(n || "").toLowerCase().replace(/[«»"]/g, "").replace(/^гильдия\s+/, "").trim(); if (/императорск/.test(k)) return FACTIONS.find(f => f.id === "crown"); return FACTIONS.find(f => { const m = f.name.toLowerCase().replace(/[«»"]/g, "").replace(/^гильдия\s+/, ""); return m === k || m.includes(k) || k.includes(m); }); };
@@ -2916,8 +2936,30 @@ document.addEventListener("click", e => { const b = e.target.closest("[data-nyfl
   const now = Date.now(); nyClicks = now - nyClickT > 3000 ? 1 : nyClicks + 1; nyClickT = now;
   if (nyClicks >= 10) { nyClicks = 0; nyFreeze(); return; }
   toast(NY_SAY[Math.floor(Math.random() * NY_SAY.length)]); }, true);
+
+/* ---------- 18+ и согласие с документами: показывается один раз, до пролога ---------- */
+const AGE_KEY = "velaris-age18-v1";
+function ageGate(next) {
+  let ok = false; try { ok = localStorage.getItem(AGE_KEY) === "1"; } catch (_) {}
+  if (ok) { next && next(); return; }
+  const docs = `<a href="pravila.html${KEEP}#soglashenie" target="_blank" rel="noopener">Пользовательское соглашение</a> и <a href="pravila.html${KEEP}#konfidencialnost" target="_blank" rel="noopener">Политику конфиденциальности</a>`;
+  const el = document.createElement("div"); el.className = "age"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-labelledby", "age-h");
+  const ask = () => { el.innerHTML = `<div class="age-card"><div class="age-seal" aria-hidden="true">18+</div><h2 id="age-h">Империя Веларис</h2>
+    <p class="age-warn">Мрачное фэнтези для взрослых: насилие, кровь, жестокость и смерть. Всё описанное — вымысел.</p>
+    <p class="age-doc">Нажимая «Мне есть 18 — войти», вы подтверждаете свой возраст и принимаете ${docs}.</p>
+    <div class="age-btns"><button type="button" class="age-yes" data-age="yes">Мне есть 18 — войти</button><button type="button" class="age-no" data-age="no">Мне нет 18</button></div></div>`; el.querySelector(".age-yes").focus(); };
+  const deny = () => { el.innerHTML = `<div class="age-card"><div class="age-seal" aria-hidden="true">18+</div><h2 id="age-h">Вход закрыт</h2>
+    <p>Приложение «Империя Веларис» доступно только с 18 лет. Возвращайтесь, когда придёт время.</p>
+    <div class="age-btns"><button type="button" class="age-no" data-age="back">Назад</button></div></div>`; el.querySelector("button").focus(); };
+  el.addEventListener("click", e => { const b = e.target.closest("[data-age]"); if (!b) return;
+    if (b.dataset.age === "yes") { try { localStorage.setItem(AGE_KEY, "1"); } catch (_) {} el.remove(); document.documentElement.classList.remove("age-lock"); next && next(); }
+    else if (b.dataset.age === "no") deny(); else ask(); });
+  el.addEventListener("keydown", e => { if (e.key === "Tab") { const f = [...el.querySelectorAll("a,button")]; if (!f.length) return; const i = f.indexOf(document.activeElement);
+    if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } } });
+  document.documentElement.classList.add("age-lock"); document.body.appendChild(el); ask();
+}
 render();
-prologAuto();
+ageGate(prologAuto);
 Promise.all([qsLoad(ADMIN && !!ghCfg().token), plLoad(false).catch(() => ({ list: [] }))]).then(([st, P]) => { QPLAYERS = P.list || []; if (applyQuestStates(st) && route === "kvesty") render(); }).catch(() => {});
 </script>
 </body>
